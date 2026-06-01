@@ -1,0 +1,9 @@
+.git
+.runtime
+.tmp_scraper_extract
+runs
+scraper/node_modules
+scraper/dist
+scraper/debug
+scraper/output
+**/.DS_Store

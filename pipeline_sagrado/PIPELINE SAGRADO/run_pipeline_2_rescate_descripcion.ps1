@@ -21,11 +21,11 @@ $sacredRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $workDir = (Resolve-Path -LiteralPath $Pipeline1WorkDir).Path
 
 $required = @(
-  "outputs\general.matches.valid.json",
-  "outputs\prepared\eciglogistica__output.base.csv",
-  "outputs\prepared\vaperalia__output.base.csv",
-  "outputs\prepared\eciglogistica__output.variants.csv",
-  "outputs\prepared\vaperalia__output.variants.csv"
+  (Join-Path "outputs" "general.matches.valid.json"),
+  (Join-Path (Join-Path "outputs" "prepared") "eciglogistica__output.base.csv"),
+  (Join-Path (Join-Path "outputs" "prepared") "vaperalia__output.base.csv"),
+  (Join-Path (Join-Path "outputs" "prepared") "eciglogistica__output.variants.csv"),
+  (Join-Path (Join-Path "outputs" "prepared") "vaperalia__output.variants.csv")
 )
 
 foreach ($file in $required) {
@@ -35,22 +35,28 @@ foreach ($file in $required) {
   }
 }
 
-Copy-Item -Path (Join-Path $sacredRoot "02_PIPELINE_RESCATE_DESCRIPCION\scripts\*") -Destination (Join-Path $workDir "scripts") -Force
+Copy-Item -Path (Join-Path (Join-Path (Join-Path $sacredRoot "02_PIPELINE_RESCATE_DESCRIPCION") "scripts") "*") -Destination (Join-Path $workDir "scripts") -Force
 
 $node = "node"
-$bundledNode = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
-if (Test-Path -LiteralPath $bundledNode) {
-  $node = $bundledNode
+if ($env:USERPROFILE) {
+  $bundledNode = Join-Path $env:USERPROFILE ".cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe"
+  if (Test-Path -LiteralPath $bundledNode) {
+    $node = $bundledNode
+  }
 }
 
 Push-Location $workDir
 try {
-  Invoke-Native $node scripts\rescue-orphans-by-description.js --general outputs\general.matches.valid.json --a-base outputs\prepared\eciglogistica__output.base.csv --b-base outputs\prepared\vaperalia__output.base.csv --a-variants outputs\prepared\eciglogistica__output.variants.csv --b-variants outputs\prepared\vaperalia__output.variants.csv
-  Invoke-Native $node scripts\build-dataset-manifest.js
+  $scriptsDir = Join-Path $workDir "scripts"
+  $outputsDir = Join-Path $workDir "outputs"
+  $preparedDir = Join-Path $outputsDir "prepared"
+
+  Invoke-Native $node (Join-Path $scriptsDir "rescue-orphans-by-description.js") --general (Join-Path $outputsDir "general.matches.valid.json") --a-base (Join-Path $preparedDir "eciglogistica__output.base.csv") --b-base (Join-Path $preparedDir "vaperalia__output.base.csv") --a-variants (Join-Path $preparedDir "eciglogistica__output.variants.csv") --b-variants (Join-Path $preparedDir "vaperalia__output.variants.csv")
+  Invoke-Native $node (Join-Path $scriptsDir "build-dataset-manifest.js")
 } finally {
   Pop-Location
 }
 
 Write-Host "PIPELINE_2_WORKDIR=$workDir"
-Write-Host "RESCUE_JSON=$(Join-Path $workDir 'outputs\description-rescue-candidates.matches.valid.json')"
-Write-Host "RESCUE_AUDIT_MD=$(Join-Path $workDir 'outputs\audits\description-rescue-candidates.audit.md')"
+Write-Host "RESCUE_JSON=$(Join-Path (Join-Path $workDir 'outputs') 'description-rescue-candidates.matches.valid.json')"
+Write-Host "RESCUE_AUDIT_MD=$(Join-Path (Join-Path (Join-Path $workDir 'outputs') 'audits') 'description-rescue-candidates.audit.md')"

@@ -1,2 +1,8 @@
 runs/*
 !runs/.gitignore
+.tmp_scraper_extract/
+.runtime/
+scraper/node_modules/
+scraper/dist/
+scraper/debug/
+scraper/output/

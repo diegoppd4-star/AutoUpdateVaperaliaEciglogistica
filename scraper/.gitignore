@@ -1,0 +1,29 @@
+node_modules/
+dist/
+debug/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# External tooling
+.codex-plugins/
+
+# Scratch research
+.research/
+
+# Generated outputs: track only Vaperalia + Eciglogistica.
+# Everything else (combined output.*, other distributors, comprobacion,
+# future connectors) stays out of git.
+output/*
+!output/index.html
+!output/vaperalia.json
+!output/vaperalia.csv
+!output/eciglogistica.json
+!output/eciglogistica.csv
+!output/categories/
+output/categories/*
+!output/categories/vaperalia__*
+!output/categories/eciglogistica__*
+!output/output.json
+!output/output.csv

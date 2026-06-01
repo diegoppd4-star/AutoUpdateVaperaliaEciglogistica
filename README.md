@@ -4,11 +4,19 @@ Repositorio independiente para automatizar el refresco completo Eciglogistica/Va
 
 Orquestador local para ejecutar de principio a fin el pipeline Eciglogistica/Vaperalia sin depender de que Codex vaya llamando cada paso manualmente.
 
+## Estado actual
+
+El repositorio ya incluye el scraper en `scraper/`. Si ejecutas `run_auto_update.mjs` sin `--input-json` ni `--scraper-command`, el flujo por defecto es:
+
+```text
+scraper integrado -> validacion contrato -> Pipeline 1 -> Pipeline 2 -> Pipeline 3 CodexExec
+```
+
 ## Que problema resuelve
 
 Hasta ahora el proceso completo se hacia asi:
 
-1. Codex recibia o localizaba un JSON scrapeado.
+1. Codex lanzaba o recibia el scrapeo.
 2. Codex lanzaba Pipeline 1.
 3. Codex lanzaba Pipeline 2.
 4. Codex lanzaba la capa IA no determinista con CodexExec.
@@ -18,12 +26,16 @@ Hasta ahora el proceso completo se hacia asi:
 Esta carpeta convierte esa orquestacion en un archivo:
 
 ```text
-run_auto_update.ps1
+run_auto_update.mjs
 ```
+
+`run_auto_update.ps1` se mantiene como runner compatible con Windows, pero el runner principal para Docker es `run_auto_update.mjs`.
 
 ## Que contiene
 
-- `run_auto_update.ps1`: runner principal end-to-end.
+- `run_auto_update.mjs`: runner principal end-to-end y entrada Docker.
+- `run_auto_update.ps1`: runner compatible con Windows/PowerShell.
+- `scraper/`: scraper TypeScript integrado para Eciglogistica/Vaperalia.
 - `pipeline_sagrado/PIPELINE SAGRADO`: copia autocontenida del Pipeline Sagrado necesario para ejecutar las tres capas.
 - `tools/validate-scrape-contract.js`: validacion previa del JSON de scrapeo.
 - `docs/SCRAPPER_ARCHITECTURE.md`: contrato tecnico del scraper.
@@ -31,16 +43,90 @@ run_auto_update.ps1
 - `config.example.json`: ejemplos de uso.
 - `runs/`: carpeta donde se crean ejecuciones nuevas.
 
-## Punto importante sobre el scraper
+## Uso autonomo completo
 
-Este repo contiene el Pipeline Sagrado y el contrato del scraper, pero no contiene el codigo fuente ejecutable del scraper original.
+Ejecuta scrapeo completo de Eciglogistica + Vaperalia y luego todo el pipeline:
 
-Por eso el runner soporta dos modos:
+```powershell
+cd "C:\Users\diego\Documents\New project\AutoUpdateVaperaliaEciglogistica"
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
+  -RunName "daily-full-refresh"
+```
+
+Equivalente multiplataforma:
+
+```powershell
+node .\run_auto_update.mjs --run-name daily-full-refresh
+```
+
+La primera vez instalara dependencias del scraper con `npm ci` y verificara Chromium de Playwright.
+
+Para evitar reinstalaciones/verificaciones en una maquina ya preparada:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
+  -RunName "daily-full-refresh" `
+  -SkipScraperInstall `
+  -SkipPlaywrightInstall
+```
+
+## Uso con Docker
+
+El objetivo de despliegue recomendado es Docker. La imagen incluye:
+
+- PowerShell para ejecutar el orquestador.
+- Node.js 22 + npm.
+- dependencias del scraper.
+- Chromium de Playwright.
+- Codex CLI (`@openai/codex`) para la capa IA no determinista.
+
+Build:
+
+```powershell
+docker build -t autoupdate-vaperalia-eciglogistica .
+```
+
+El Dockerfile no clona el repo desde GitHub. El codigo entra como contexto de build (`COPY . .`), y las dependencias externas se instalan en build time desde fuentes versionadas o bloqueadas:
+
+- Node viene de la imagen base `node:22-bookworm`.
+- El scraper usa `package-lock.json`.
+- Codex CLI queda fijado por `CODEX_CLI_VERSION`.
+- Playwright instala Chromium dentro de la imagen.
+
+Ejecucion completa:
+
+```powershell
+docker run --rm `
+  -e OPENAI_API_KEY=$env:OPENAI_API_KEY `
+  -v "${PWD}\runs:/app/runs" `
+  autoupdate-vaperalia-eciglogistica
+```
+
+Con `docker compose`:
+
+```powershell
+docker compose up --build
+```
+
+Para probar sin capa IA:
+
+```powershell
+docker run --rm `
+  -v "${PWD}\runs:/app/runs" `
+  autoupdate-vaperalia-eciglogistica `
+  --run-name "docker-test" `
+  --skip-codex-exec
+```
+
+La capa CodexExec necesita credenciales disponibles dentro del contenedor. La opcion mas directa es `OPENAI_API_KEY`.
+
+## Modos alternativos
+
+El runner tambien soporta:
 
 1. Recibir un JSON ya scrapeado con `-InputJson`.
-2. Ejecutar un scraper externo mediante `-ScraperCommand`.
-
-El modo 2 queda preparado para el futuro automatico diario: cuando el scraper real este disponible, se conecta ahi.
+2. Ejecutar otro scraper externo mediante `-ScraperCommand`.
 
 ## Uso con JSON ya scrapeado
 
