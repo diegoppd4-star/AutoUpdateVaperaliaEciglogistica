@@ -143,7 +143,7 @@ function runBundledScraper(targetScrapeJson) {
     runCommand(npmCommand(), ["exec", "--", "playwright", "install", "chromium"], { cwd: scraperRoot });
   }
 
-  runCommand(npmCommand(), ["run", "build"], { cwd: scraperRoot });
+  runCommand(process.execPath, [path.join(scraperRoot, "node_modules", "typescript", "bin", "tsc")], { cwd: scraperRoot });
 
   const scraperArgs = [
     path.join(scraperRoot, "dist", "index.js"),
