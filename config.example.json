@@ -1,0 +1,16 @@
+{
+  "purpose": "Ejemplo documental. El runner actual se configura por parametros PowerShell.",
+  "inputJsonMode": {
+    "description": "Usar un JSON ya scrapeado.",
+    "command": ".\\run_auto_update.ps1 -InputJson \"C:\\\\ruta\\\\output.json\""
+  },
+  "externalScraperMode": {
+    "description": "Usar un scraper externo. El comando debe escribir el JSON final en $env:AUTOUPDATE_SCRAPE_OUTPUT_JSON.",
+    "command": ".\\run_auto_update.ps1 -ScraperCommand \"cd C:\\\\ruta\\\\scraper; npm start -- --connector all --full-refresh --out `$env:AUTOUPDATE_SCRAPE_OUTPUT_JSON\""
+  },
+  "codexExec": {
+    "batchSize": 20,
+    "decisionContract": ["accepted", "rejected"],
+    "needsHumanAllowed": false
+  }
+}

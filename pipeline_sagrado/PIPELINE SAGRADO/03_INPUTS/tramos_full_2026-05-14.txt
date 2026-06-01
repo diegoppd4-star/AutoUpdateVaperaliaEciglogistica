@@ -1,0 +1,231 @@
+3 Baccos:aroma_concentrate
+77:pouch
+Alquimia Para Vapers:aroma_concentrate
+Anarchist:nicotine_salt
+Aromes et liquides:aroma_concentrate
+ARTESANALES:coil
+Aspire:accessory
+Aspire:atomizer_tank
+Aspire:coil
+Aspire:kit_device
+Aspire:mod_device
+Aspire:nicotine_salt
+Aspire:pod_replacement
+Aspire:pyrex
+Babel E-Liquids:aroma_concentrate
+Babel E-Liquids:eliquid
+Bacterio:coil
+Bacterio Coils:coil
+Bar:nicotine_salt
+Big Bold:nicotine_salt
+Blackout:aroma_concentrate
+Brutal:aroma_concentrate
+Bubble Island Cream:aroma_concentrate
+Burn Them All Coils:coil
+Capella Flavors:aroma_concentrate
+Charlies Chalk Dust:aroma_concentrate
+Charro Coils:coil
+Chemnovatic:aroma_concentrate
+Chemnovatic:nicotine_salt
+Chernobyl Coils:coil
+Chubby Gorilla:aroma_concentrate
+Chuffed:aroma_concentrate
+Cloud 9:aroma_concentrate
+Coil Spill:aroma_concentrate
+Coil Spill:eliquid
+Coiland:aroma_concentrate
+Coiland:unknown
+COILS:coil
+Cotton Bacon:aroma_concentrate
+CREME KONG:nicotine_salt
+CURIEUX:aroma_concentrate
+Denssi:pouch
+Dinner Lady:aroma_concentrate
+Dinner Lady:nicotine_salt
+Don Cristo:aroma_concentrate
+Don Cristo:eliquid
+Don Cristo:nicotine_salt
+Donut King:nicotine_salt
+Dotmod:coil
+Dotmod:eliquid
+Dotmod:kit_device
+Dotmod:pod_replacement
+Dr.Frost:aroma_concentrate
+Dr.Frost:nicotine_salt
+DRIFTER:aroma_concentrate
+DRIFTER:disposable
+DRIFTER:nicotine_salt
+DRIPPED:disposable
+Drops:aroma_concentrate
+Drops:eliquid
+Drops:nicotine_salt
+Efest:battery_charger
+Efest:pod_replacement
+Eleaf:coil
+Eleaf:kit_device
+Eleaf:mod_device
+Eleaf:pod_replacement
+Eleaf:unknown
+Elfbar:disposable
+Fabula:aroma_concentrate
+Fabula:nicotine_salt
+Five Pawns:nicotine_salt
+Fizzy Juice:aroma_concentrate
+Fizzy Juice:nicotine_salt
+Frascos de Macerado:aroma_concentrate
+Full Moon:aroma_concentrate
+Geekvape:atomizer_tank
+Geekvape:coil
+Geekvape:kit_device
+Geekvape:mod_device
+Geekvape:pod_replacement
+Geekvape:pyrex
+Generic:accessory
+Generic:aroma_concentrate
+Generic:kit_device
+Generic:mod_device
+Generic:pyrex
+Generic:unknown
+Halo:aroma_concentrate
+Halo:eliquid
+Halo:nicotine_salt
+Hellvape:aroma_concentrate
+Hellvape:atomizer_tank
+Hellvape:coil
+Hellvape:kit_device
+Hellvape:pyrex
+Herrera:aroma_concentrate
+Herrera:eliquid
+Herrera:nicotine_salt
+Holy Fiber:aroma_concentrate
+Innokin:atomizer_tank
+Innokin:coil
+Innokin:kit_device
+Innokin:pod_replacement
+Innokin:pyrex
+IVG E-Liquids:aroma_concentrate
+IVG E-Liquids:nicotine_salt
+Jatosto:aroma_concentrate
+Jatosto:nicotine_salt
+Jeringas:aroma_concentrate
+Jolt:accessory
+Jolt:unknown
+Joyetech:coil
+Joyetech:kit_device
+Joyetech:mod_device
+Joyetech:pod_replacement
+Jungle Fever:aroma_concentrate
+Just Juice:aroma_concentrate
+Just Juice:disposable
+Just Juice:eliquid
+Just Juice:nicotine_salt
+Justfog:coil
+Keep It 100:aroma_concentrate
+Kwot:battery_charger
+Kwot:pod_replacement
+Liqua:aroma_concentrate
+Liqua:eliquid
+Loaded E-Liquid:aroma_concentrate
+Loaded E-Liquid:nicotine_salt
+LOL:aroma_concentrate
+Lost Vape:atomizer_tank
+Lost Vape:coil
+Lost Vape:kit_device
+Lost Vape:mod_device
+Lost Vape:pod_replacement
+Lost Vape:pyrex
+LVE:pod_replacement
+Maori:aroma_concentrate
+Maxicell:battery_charger
+ME LIQUIDS:nicotine_salt
+Medievo:aroma_concentrate
+Medievo:nicotine_salt
+Micro Pod:disposable
+Mono eJuice:aroma_concentrate
+Mono eJuice:nicotine_salt
+Monster Vape:aroma_concentrate
+Montreal Original:aroma_concentrate
+Montreal Original:nicotine_salt
+MOTI:pod_replacement
+Mübar:disposable
+Nevoks:coil
+Nevoks:kit_device
+Nitecore:battery_charger
+NYF:aroma_concentrate
+OhF! E-liquids:aroma_concentrate
+OhF! E-liquids:nicotine_salt
+Ohmia Corp:nicotine_salt
+Oil4Vap:aroma_concentrate
+Oil4Vap:eliquid
+Oil4Vap:nicotine_salt
+Omerta:aroma_concentrate
+Omerta:nicotine_salt
+Orange County CBD:cbd
+Ossem Juice:aroma_concentrate
+Ossem Juice:nicotine_salt
+Oxva:coil
+Oxva:kit_device
+Oxva:pod_replacement
+Oxva E-Liquids:aroma_concentrate
+Oxva E-Liquids:nicotine_salt
+Pachamama:aroma_concentrate
+Pachamama:nicotine_salt
+Peccato Originale:aroma_concentrate
+Pilas 18650:battery_charger
+Prestige Fruits:aroma_concentrate
+Pulp:nicotine_salt
+Pure:aroma_concentrate
+Refill Bar Salts:nicotine_salt
+Ruthless:aroma_concentrate
+Ruthless:nicotine_salt
+Samsung:battery_charger
+Shootiz:aroma_concentrate
+SKE:disposable
+SKE:kit_device
+SKE:pod_replacement
+Smok:coil
+Smok:kit_device
+Smok:pod_replacement
+Smok:pyrex
+Sukka:aroma_concentrate
+Sukka Salts:aroma_concentrate
+Sukka Salts:nicotine_salt
+The Ark:aroma_concentrate
+Thunderhead Creations:atomizer_tank
+Uwell:coil
+Uwell:kit_device
+Uwell:pod_replacement
+Uwell:pyrex
+Uwell:unknown
+V4 Vapour:eliquid
+Vampire Vape:aroma_concentrate
+Vandy Vape:pod_replacement
+Vap Fip:aroma_concentrate
+Vap Fip:eliquid
+VAPCELL:battery_charger
+VAPCELL:pod_replacement
+Vapemoniadas:aroma_concentrate
+Vapemoniadas:nicotine_salt
+Vapeur France:aroma_concentrate
+Vaporesso:atomizer_tank
+Vaporesso:coil
+Vaporesso:kit_device
+Vaporesso:mod_device
+Vaporesso:pod_replacement
+Vaporesso:pyrex
+Velo:pouch
+Voopoo:atomizer_tank
+Voopoo:coil
+Voopoo:kit_device
+Voopoo:mod_device
+Voopoo:pod_replacement
+Voopoo:pyrex
+Vozol:disposable
+Vozol:eliquid
+Vozol:kit_device
+Wismec:pod_replacement
+Yeti:aroma_concentrate
+Yeti:nicotine_salt
+Zap Juice:aroma_concentrate
+Zap Juice:nicotine_salt
+Zeltu:kit_device
