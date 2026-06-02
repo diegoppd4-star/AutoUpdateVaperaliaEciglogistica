@@ -6,8 +6,8 @@ services:
       CODEX_HOME: /codex-home
       CODEX_EXEC_PATH: codex
     volumes:
-      - ./runs:/app/runs:Z
-      - ${CODEX_HOST_HOME:-/var/home/pedro/.codex}:/codex-home:ro,Z
+      - ./runs:/app/runs
+      - ${CODEX_HOST_HOME:-/var/home/pedro/.codex}:/codex-home:ro
     command:
       - --run-name
       - docker-full-refresh
