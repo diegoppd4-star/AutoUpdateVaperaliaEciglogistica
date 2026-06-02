@@ -9,3 +9,5 @@ services:
     command:
       - --run-name
       - docker-full-refresh
+      - --skip-scraper-install
+      - --skip-playwright-install

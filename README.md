@@ -75,11 +75,20 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
 
 El objetivo de despliegue recomendado es Docker. La imagen incluye:
 
-- PowerShell para ejecutar el orquestador.
 - Node.js 22 + npm.
 - dependencias del scraper.
 - Chromium de Playwright.
 - Codex CLI (`@openai/codex`) para la capa IA no determinista.
+
+El contenedor no depende de PowerShell: entra por `node /app/run_auto_update.mjs` y ejecuta los scripts JS del Pipeline Sagrado directamente.
+
+Requisitos en Windows:
+
+```cmd
+winget install --id Docker.DockerDesktop --source winget --accept-package-agreements --accept-source-agreements
+```
+
+Despues de instalar Docker Desktop puede hacer falta reiniciar Windows o abrir Docker Desktop una vez para que el daemon quede activo.
 
 Build:
 
@@ -100,13 +109,22 @@ Ejecucion completa:
 docker run --rm `
   -e OPENAI_API_KEY=$env:OPENAI_API_KEY `
   -v "${PWD}\runs:/app/runs" `
-  autoupdate-vaperalia-eciglogistica
+  autoupdate-vaperalia-eciglogistica `
+  --run-name "docker-full-refresh" `
+  --skip-scraper-install `
+  --skip-playwright-install
 ```
 
 Con `docker compose`:
 
 ```powershell
 docker compose up --build
+```
+
+En Windows tambien puedes lanzar:
+
+```cmd
+run_docker_full.cmd
 ```
 
 Para probar sin capa IA:
@@ -116,6 +134,8 @@ docker run --rm `
   -v "${PWD}\runs:/app/runs" `
   autoupdate-vaperalia-eciglogistica `
   --run-name "docker-test" `
+  --skip-scraper-install `
+  --skip-playwright-install `
   --skip-codex-exec
 ```
 

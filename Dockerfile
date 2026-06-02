@@ -20,4 +20,4 @@ ENV NODE_ENV=production
 ENV CODEX_EXEC_PATH=codex
 
 ENTRYPOINT ["node", "/app/run_auto_update.mjs"]
-CMD ["--run-name", "docker-full-refresh"]
+CMD ["--run-name", "docker-full-refresh", "--skip-scraper-install", "--skip-playwright-install"]
