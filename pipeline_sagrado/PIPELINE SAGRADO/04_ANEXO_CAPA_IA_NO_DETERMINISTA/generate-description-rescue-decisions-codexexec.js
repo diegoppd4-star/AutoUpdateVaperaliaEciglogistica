@@ -332,10 +332,88 @@ function findCodexExecutable(args) {
   return "codex";
 }
 
+function uniqueExistingDirs(paths) {
+  const seen = new Set();
+  const dirs = [];
+  for (const dir of paths) {
+    if (!dir || seen.has(dir) || !fs.existsSync(dir)) continue;
+    seen.add(dir);
+    dirs.push(dir);
+  }
+  return dirs;
+}
+
+function sourceCodexHomes() {
+  return uniqueExistingDirs([
+    process.env.CODEX_HOME,
+    process.env.HOME && path.join(process.env.HOME, ".codex"),
+    process.env.USERPROFILE && path.join(process.env.USERPROFILE, ".codex"),
+    path.join(os.homedir(), ".codex"),
+  ]);
+}
+
+function copyCodexBootstrapFiles(sourceDir, targetDir) {
+  const filesToCopy = new Set([
+    "auth.json",
+    "config.toml",
+    "installation_id",
+    "models_cache.json",
+    "version.json",
+  ]);
+  let copiedAuth = false;
+  fs.mkdirSync(targetDir, { recursive: true });
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !filesToCopy.has(entry.name)) continue;
+    const source = path.join(sourceDir, entry.name);
+    const target = path.join(targetDir, entry.name);
+    fs.copyFileSync(source, target);
+    if (entry.name === "auth.json") copiedAuth = true;
+  }
+  return copiedAuth;
+}
+
+function prepareCodexExecEnv(tmpDir) {
+  const homeDir = path.join(tmpDir, "home");
+  const codexHome = path.join(homeDir, ".codex");
+  const tempDir = path.join(tmpDir, "tmp");
+  const xdgRuntimeDir = path.join(tmpDir, "xdg-runtime");
+  fs.mkdirSync(codexHome, { recursive: true });
+  fs.mkdirSync(tempDir, { recursive: true });
+  fs.mkdirSync(xdgRuntimeDir, { recursive: true });
+
+  for (const sourceDir of sourceCodexHomes()) {
+    if (path.resolve(sourceDir) === path.resolve(codexHome)) continue;
+    if (copyCodexBootstrapFiles(sourceDir, codexHome)) break;
+  }
+
+  const env = {
+    ...process.env,
+    HOME: homeDir,
+    USERPROFILE: homeDir,
+    CODEX_HOME: codexHome,
+    XDG_CONFIG_HOME: path.join(homeDir, ".config"),
+    XDG_CACHE_HOME: path.join(homeDir, ".cache"),
+    XDG_DATA_HOME: path.join(homeDir, ".local", "share"),
+    XDG_STATE_HOME: path.join(homeDir, ".local", "state"),
+    XDG_RUNTIME_DIR: xdgRuntimeDir,
+    TMPDIR: tempDir,
+    TMP: tempDir,
+    TEMP: tempDir,
+  };
+
+  if (process.platform === "win32") {
+    env.LOCALAPPDATA = path.join(homeDir, "AppData", "Local");
+    env.APPDATA = path.join(homeDir, "AppData", "Roaming");
+  }
+
+  return env;
+}
+
 function runProcess(command, args, stdin, options) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd: options.cwd || process.cwd(),
+      env: options.env || process.env,
       windowsHide: true,
       shell: false,
     });
@@ -383,35 +461,72 @@ function parseJsonLoose(text) {
   }
 }
 
+async function callCodexExecPreflight(args) {
+  const codexPath = findCodexExecutable(args);
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "desc-rescue-codexexec-preflight-"));
+  const outputFile = path.join(tmpDir, "preflight.txt");
+  try {
+    const codexArgs = [
+      "--ask-for-approval", "never",
+      "exec",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "--sandbox", "read-only",
+      "--color", "never",
+      "--output-last-message", outputFile,
+    ];
+    if (args.model) codexArgs.push("--model", args.model);
+    codexArgs.push("Responde exactamente con esta palabra: CODEX_PREFLIGHT_OK");
+    const result = await runProcess(codexPath, codexArgs, "", {
+      cwd: process.cwd(),
+      env: prepareCodexExecEnv(tmpDir),
+      timeoutMs: 2 * 60 * 1000,
+    });
+    const text = fs.existsSync(outputFile) ? fs.readFileSync(outputFile, "utf8") : result.stdout;
+    if (!String(text).includes("CODEX_PREFLIGHT_OK")) {
+      throw new Error(`CodexExec preflight no devolvio CODEX_PREFLIGHT_OK. Respuesta: ${String(text).slice(0, 1000)}`);
+    }
+    console.log(JSON.stringify({ ok: true, codexPath, preflight: "CODEX_PREFLIGHT_OK" }, null, 2));
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
+
 async function callCodexExec(packet, args, batchNumber) {
   const codexPath = findCodexExecutable(args);
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "desc-rescue-codexexec-"));
   const outputFile = path.join(tmpDir, `batch-${batchNumber}.json`);
   const schemaFile = path.join(tmpDir, "schema.json");
-  fs.writeFileSync(schemaFile, JSON.stringify(outputSchema(), null, 2), "utf8");
-  const codexArgs = [
-    "--ask-for-approval", "never",
-    "exec",
-    "--skip-git-repo-check",
-    "--sandbox", "read-only",
-    "--color", "never",
-    "--output-last-message", outputFile,
-    "--output-schema", schemaFile,
-  ];
-  if (args.model) codexArgs.push("--model", args.model);
-  codexArgs.push("-");
-  const result = await runProcess(codexPath, codexArgs, buildPrompt(packet), {
-    cwd: process.cwd(),
-    timeoutMs: args.timeoutMs,
-  });
-  const text = fs.existsSync(outputFile) ? fs.readFileSync(outputFile, "utf8") : result.stdout;
-  return {
-    codexPath,
-    outputFile,
-    stdoutTail: result.stdout.slice(-3000),
-    stderrTail: result.stderr.slice(-3000),
-    parsed: parseJsonLoose(text),
-  };
+  try {
+    fs.writeFileSync(schemaFile, JSON.stringify(outputSchema(), null, 2), "utf8");
+    const codexArgs = [
+      "--ask-for-approval", "never",
+      "exec",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "--sandbox", "read-only",
+      "--color", "never",
+      "--output-last-message", outputFile,
+      "--output-schema", schemaFile,
+    ];
+    if (args.model) codexArgs.push("--model", args.model);
+    codexArgs.push("-");
+    const result = await runProcess(codexPath, codexArgs, buildPrompt(packet), {
+      cwd: process.cwd(),
+      env: prepareCodexExecEnv(tmpDir),
+      timeoutMs: args.timeoutMs,
+    });
+    const text = fs.existsSync(outputFile) ? fs.readFileSync(outputFile, "utf8") : result.stdout;
+    return {
+      codexPath,
+      outputFile,
+      stdoutTail: result.stdout.slice(-3000),
+      stderrTail: result.stderr.slice(-3000),
+      parsed: parseJsonLoose(text),
+    };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 }
 
 function decisionKey(decision) {
@@ -499,6 +614,11 @@ function validateAndMerge(batchResponses, candidates) {
 
 async function main() {
   const args = parseArgs(process.argv);
+  if (args.preflight) {
+    await callCodexExecPreflight(args);
+    return;
+  }
+
   const rescue = readJson(args.rescue);
   const auditMd = readTextIfExists(args.rescueAudit);
   const originalIndex = indexOriginalScrape(args.originalScrape);

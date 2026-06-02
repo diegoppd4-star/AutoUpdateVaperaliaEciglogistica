@@ -29,9 +29,17 @@ const scraperDebug = Boolean(args.scraperDebug || args["scraper-debug"]);
 const skipScraperInstall = Boolean(args.skipScraperInstall || args["skip-scraper-install"]);
 const skipPlaywrightInstall = Boolean(args.skipPlaywrightInstall || args["skip-playwright-install"]);
 const skipCodexExec = Boolean(args.skipCodexExec || args["skip-codex-exec"]);
+const skipBuildMaster = Boolean(args.skipBuildMaster || args["skip-build-master"]);
+const loadBdd = Boolean(args.loadBdd || args["load-bdd"]);
+const onlyBuildMaster = Boolean(args.onlyBuildMaster || args["only-build-master"]);
+const onlyLoadBdd = Boolean(args.onlyLoadBdd || args["only-load-bdd"]);
+const loadBddDryRun = Boolean(args.loadBddDryRun || args["load-bdd-dry-run"]);
+const skipEanEnrichment = Boolean(args.skipEanEnrichment || args["skip-ean-enrichment"]);
 const dryRun = Boolean(args.dryRun || args["dry-run"]);
 const codexBatchSize = Number(args.codexBatchSize || args["codex-batch-size"] || 20);
 const codexModel = args.codexModel || args["codex-model"] || "";
+const bddBatchSize = Number(args.bddBatchSize || args["bdd-batch-size"] || 1000);
+const fromRun = args.fromRun || args["from-run"] || "";
 
 main().catch((error) => {
   console.error(error?.stack || error?.message || error);
@@ -39,6 +47,25 @@ main().catch((error) => {
 });
 
 async function main() {
+  if (args.help || args.h) {
+    printHelp();
+    return;
+  }
+
+  if (onlyBuildMaster) {
+    const existingRunDir = resolveExistingRunDir(fromRun);
+    runBuildMaster(path.join(existingRunDir, "pipeline-work"));
+    return;
+  }
+
+  if (onlyLoadBdd) {
+    const existingRunDir = resolveExistingRunDir(fromRun);
+    const existingWorkDir = path.join(existingRunDir, "pipeline-work");
+    ensureMasterJson(existingWorkDir);
+    runLoadBdd(existingWorkDir);
+    return;
+  }
+
   if (!fs.existsSync(pipelineRoot)) {
     throw new Error(`No se encuentra Pipeline Sagrado autocontenido: ${pipelineRoot}`);
   }
@@ -50,6 +77,10 @@ async function main() {
   console.log(`Node: ${process.execPath}`);
   console.log(`Pipeline: ${pipelineRoot}`);
   console.log(`Scraper integrado: ${scraperRoot}`);
+
+  if (!skipCodexExec && !dryRun) {
+    runCodexExecPreflight();
+  }
 
   let scrapeJson = path.join(inputDir, "scrape.json");
 
@@ -105,6 +136,16 @@ async function main() {
   }
 
   const outputsDir = path.join(pipelineWorkDir, "outputs");
+  const masterJsonDir = path.join(outputsDir, "master-json");
+  if (skipBuildMaster) {
+    console.log("SkipBuildMaster activo: no se generan master JSON para BDD.");
+  } else {
+    runBuildMaster(pipelineWorkDir);
+  }
+  if (loadBdd) {
+    runLoadBdd(pipelineWorkDir);
+  }
+
   writeSummary({
     mode: "completed",
     runDir,
@@ -117,6 +158,11 @@ async function main() {
     reviewedRescues: skipCodexExec ? null : path.join(outputsDir, "reviewed-rescues.matches.valid.json"),
     reviewedRescuesAudit: skipCodexExec ? null : path.join(outputsDir, "audits", "reviewed-rescues.audit.md"),
     codexDecisionLedger: skipCodexExec ? null : path.join(outputsDir, "reviews", "description-rescue-decisions.json"),
+    masterJsonDir: skipBuildMaster ? null : masterJsonDir,
+    masterMatchedBoth: skipBuildMaster ? null : path.join(masterJsonDir, "master_matched_both.json"),
+    masterOnlyEciglogistica: skipBuildMaster ? null : path.join(masterJsonDir, "master_only_eciglogistica.json"),
+    masterOnlyVaperalia: skipBuildMaster ? null : path.join(masterJsonDir, "master_only_vaperalia.json"),
+    bddLoadReport: loadBdd ? path.join(pipelineWorkDir, "sql-loader", "run_output", "sql-loader-report.json") : null,
   });
 }
 
@@ -143,7 +189,7 @@ function runBundledScraper(targetScrapeJson) {
     runCommand(npmCommand(), ["exec", "--", "playwright", "install", "chromium"], { cwd: scraperRoot });
   }
 
-  runCommand(process.execPath, [path.join(scraperRoot, "node_modules", "typescript", "bin", "tsc")], { cwd: scraperRoot });
+  runCommand(npmCommand(), ["run", "build"], { cwd: scraperRoot });
 
   const scraperArgs = [
     path.join(scraperRoot, "dist", "index.js"),
@@ -240,6 +286,99 @@ function runPipeline3(scrapeJson) {
   runNode(path.join(scripts, "build-dataset-manifest.js"), [], pipelineWorkDir);
 }
 
+function runBuildMaster(workDir) {
+  step("Pipeline 5 - master JSON para BDD");
+  const outputs = path.join(workDir, "outputs");
+  const prepared = path.join(outputs, "prepared");
+  const scripts = path.join(workDir, "scripts");
+  const masterScript = path.join(pipelineRoot, "05_MASTER_BDD", "scripts", "build-master-seed-jsons.js");
+  assertFiles([
+    masterScript,
+    path.join(scripts, "build-dataset-manifest.js"),
+    path.join(scripts, "build-general-dataset.js"),
+    path.join(prepared, "eciglogistica__output.base.csv"),
+    path.join(prepared, "eciglogistica__output.variants.csv"),
+    path.join(prepared, "vaperalia__output.base.csv"),
+    path.join(prepared, "vaperalia__output.variants.csv"),
+  ]);
+  fs.copyFileSync(masterScript, path.join(scripts, "build-master-seed-jsons.js"));
+  runNode(path.join(scripts, "build-dataset-manifest.js"), [], workDir);
+  runNode(path.join(scripts, "build-general-dataset.js"), [], workDir);
+  runNode(path.join(scripts, "build-master-seed-jsons.js"), [
+    "--general", path.join(outputs, "general.matches.valid.json"),
+    "--ecig-base", path.join(prepared, "eciglogistica__output.base.csv"),
+    "--ecig-variants", path.join(prepared, "eciglogistica__output.variants.csv"),
+    "--vaperalia-base", path.join(prepared, "vaperalia__output.base.csv"),
+    "--vaperalia-variants", path.join(prepared, "vaperalia__output.variants.csv"),
+    "--out-dir", path.join(outputs, "master-json"),
+  ], workDir);
+}
+
+function runLoadBdd(workDir) {
+  step(loadBddDryRun ? "Pipeline 6 - carga BDD dry run" : "Pipeline 6 - carga BDD");
+  const outputs = path.join(workDir, "outputs");
+  const masterDir = path.join(outputs, "master-json");
+  const prepared = path.join(outputs, "prepared");
+  const loaderSourceRoot = path.join(pipelineRoot, "06_CARGA_BDD", "SQLLoader");
+  const loaderRoot = path.join(workDir, "sql-loader");
+  const inputMaster = path.join(loaderRoot, "input_master");
+  const inputPrepared = path.join(inputMaster, "prepared");
+  assertFiles([
+    path.join(masterDir, "master_matched_both.json"),
+    path.join(masterDir, "master_only_eciglogistica.json"),
+    path.join(masterDir, "master_only_vaperalia.json"),
+    path.join(prepared, "vaperalia__output.variants.csv"),
+    path.join(loaderSourceRoot, "scripts", "load_master_to_postgres.py"),
+  ]);
+
+  fs.rmSync(loaderRoot, { recursive: true, force: true });
+  fs.cpSync(loaderSourceRoot, loaderRoot, { recursive: true });
+  fs.rmSync(inputMaster, { recursive: true, force: true });
+  fs.mkdirSync(inputPrepared, { recursive: true });
+  fs.copyFileSync(path.join(masterDir, "master_matched_both.json"), path.join(inputMaster, "master_matched_both.json"));
+  fs.copyFileSync(path.join(masterDir, "master_only_eciglogistica.json"), path.join(inputMaster, "master_only_eciglogistica.json"));
+  fs.copyFileSync(path.join(masterDir, "master_only_vaperalia.json"), path.join(inputMaster, "master_only_vaperalia.json"));
+  fs.copyFileSync(path.join(prepared, "vaperalia__output.variants.csv"), path.join(inputPrepared, "vaperalia__output.variants.csv"));
+
+  const loaderArgs = [
+    path.join(loaderRoot, "scripts", "load_master_to_postgres.py"),
+    "--batch-size", String(bddBatchSize),
+  ];
+  if (loadBddDryRun) loaderArgs.push("--dry-run");
+  if (skipEanEnrichment) loaderArgs.push("--skip-ean-enrichment");
+  runCommand("python3", loaderArgs, { cwd: loaderRoot });
+}
+
+function ensureMasterJson(workDir) {
+  const masterDir = path.join(workDir, "outputs", "master-json");
+  const required = [
+    path.join(masterDir, "master_matched_both.json"),
+    path.join(masterDir, "master_only_eciglogistica.json"),
+    path.join(masterDir, "master_only_vaperalia.json"),
+  ];
+  if (required.every((file) => fs.existsSync(file))) return;
+  runBuildMaster(workDir);
+}
+
+function runCodexExecPreflight() {
+  step("Preflight CodexExec");
+  const runner = path.join(pipelineRoot, "04_ANEXO_CAPA_IA_NO_DETERMINISTA", "generate-description-rescue-decisions-codexexec.js");
+  const preflightArgs = ["--preflight"];
+  if (codexModel) preflightArgs.push("--model", codexModel);
+  runNode(runner, preflightArgs, root);
+}
+
+function resolveExistingRunDir(value) {
+  if (!value) {
+    throw new Error("--only-build-master/--only-load-bdd requieren --from-run con nombre de run o ruta absoluta.");
+  }
+  const direct = path.resolve(value);
+  if (fs.existsSync(direct)) return direct;
+  const underOutputRoot = path.join(outputRoot, value);
+  if (fs.existsSync(underOutputRoot)) return underOutputRoot;
+  throw new Error(`No se encuentra la run indicada en --from-run: ${value}`);
+}
+
 function writeSummary(summary) {
   const full = {
     generatedAt: new Date().toISOString(),
@@ -307,6 +446,49 @@ function timestamp() {
 function step(name) {
   console.log("");
   console.log(`== ${name} ==`);
+}
+
+function printHelp() {
+  console.log(`Uso:
+  node run_auto_update.mjs [opciones]
+
+Flujo normal:
+  scraper -> validacion -> pipeline 1 -> pipeline 2 -> CodexExec -> master JSON
+
+Flags de entrada:
+  --run-name <nombre>              Nombre de la run.
+  --output-root <dir>              Directorio base de runs. Default: ./runs.
+  --input-json <file>              Usa un scrape JSON existente.
+  --scraper-command <cmd>          Usa un scraper externo.
+  --scraper-output-json <file>     Output esperado del scraper externo.
+
+Flags del scraper integrado:
+  --scraper-connector <name>       Connector. Default: all.
+  --scraper-limit <n>              Limite de productos. Default: 0.
+  --scraper-concurrency <n>        Concurrencia. Default: 5.
+  --scraper-categories <csv>       Categorias concretas.
+  --scraper-debug                  Guarda debug del scraper.
+  --skip-scraper-install           Salta npm ci si ya esta preparado.
+  --skip-playwright-install        Salta instalacion/verificacion Chromium.
+
+Saltos del pipeline:
+  --dry-run                        Valida entrada y no ejecuta pipelines.
+  --skip-codex-exec                Salta Pipeline 3 IA/CodexExec.
+  --skip-build-master              Salta master JSON final.
+
+CodexExec:
+  --codex-batch-size <n>           Tamano de batch. Default: 20.
+  --codex-model <model>            Modelo Codex.
+
+BDD:
+  --load-bdd                       Carga BDD al final, despues de master JSON.
+  --load-bdd-dry-run               Prepara payload/reporte sin insertar.
+  --skip-ean-enrichment            Salta enriquecimiento EAN13 del loader.
+  --bdd-batch-size <n>             Batch size loader. Default: 1000.
+  --only-build-master              Solo genera master JSON desde una run existente.
+  --only-load-bdd                  Solo carga BDD desde una run existente.
+  --from-run <run|path>            Run usada por --only-build-master/--only-load-bdd.
+`);
 }
 
 function parseArgs(argv) {

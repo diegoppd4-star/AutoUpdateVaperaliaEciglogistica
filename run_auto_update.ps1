@@ -42,11 +42,7 @@ function Install-PortableNode {
   if ($SkipPortableNodeDownload) {
     throw "No se encontro npm y SkipPortableNodeDownload esta activo. Instala Node.js/npm o desactiva ese flag."
   }
-  $isWindowsOs = $true
-  if ($PSVersionTable.PSEdition -eq "Core") {
-    $isWindowsOs = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
-  }
-  if (-not $isWindowsOs) {
+  if (-not $IsWindows) {
     throw "No se encontro npm. En Linux/Docker instala Node.js/npm en la imagen; la descarga portable automatica solo esta preparada para Windows."
   }
 
@@ -252,18 +248,10 @@ try {
 
       if (-not $SkipPlaywrightInstall) {
         Write-Host "Verificando navegador Playwright Chromium..."
-        $playwrightCli = Join-Path (Join-Path $scraperRoot "node_modules") (Join-Path "playwright" "cli.js")
-        if (-not (Test-Path -LiteralPath $playwrightCli)) {
-          throw "No se encuentra Playwright CLI despues de npm ci: $playwrightCli"
-        }
-        Invoke-NativeCommand -FilePath $node -Arguments @($playwrightCli, "install", "chromium") -WorkingDirectory $scraperRoot
+        Invoke-NativeCommand -FilePath $npm -Arguments @("exec", "--", "playwright", "install", "chromium") -WorkingDirectory $scraperRoot
       }
 
-      $tscCli = Join-Path (Join-Path $scraperRoot "node_modules") (Join-Path "typescript" (Join-Path "bin" "tsc"))
-      if (-not (Test-Path -LiteralPath $tscCli)) {
-        throw "No se encuentra TypeScript CLI despues de npm ci: $tscCli"
-      }
-      Invoke-NativeCommand -FilePath $node -Arguments @($tscCli) -WorkingDirectory $scraperRoot
+      Invoke-NativeCommand -FilePath $npm -Arguments @("run", "build") -WorkingDirectory $scraperRoot
 
       $scraperArgs = @(
         "dist/index.js",
@@ -337,11 +325,15 @@ try {
     Write-Host "SkipCodexExec activo: no se ejecuta la capa IA no determinista."
   } else {
     Invoke-Step "Pipeline 3 - capa IA no determinista con CodexExec" {
+      $args = @(
+        "-PipelineWorkDir", $pipelineWorkDir,
+        "-OriginalScrapeJson", $scrapeJson,
+        "-BatchSize", "$CodexBatchSize"
+      )
       if ($CodexModel) {
-        & (Join-Path $pipelineRoot "run_pipeline_3_ia_no_determinista.ps1") -PipelineWorkDir $pipelineWorkDir -OriginalScrapeJson $scrapeJson -BatchSize $CodexBatchSize -CodexModel $CodexModel
-      } else {
-        & (Join-Path $pipelineRoot "run_pipeline_3_ia_no_determinista.ps1") -PipelineWorkDir $pipelineWorkDir -OriginalScrapeJson $scrapeJson -BatchSize $CodexBatchSize
+        $args += @("-CodexModel", $CodexModel)
       }
+      & (Join-Path $pipelineRoot "run_pipeline_3_ia_no_determinista.ps1") @args
       if ($LASTEXITCODE -ne 0) {
         throw "Pipeline 3 fallo con codigo $LASTEXITCODE"
       }

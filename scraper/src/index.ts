@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { crawl, USER_AGENT } from "./crawler.js";
 import { exportResults } from "./exporter.js";
@@ -10,13 +10,24 @@ import { NuevasTendenciasConnector } from "./connectors/nuevastendencias.js";
 import { KmlsConnector } from "./connectors/kmls.js";
 import { BudsvapeConnector } from "./connectors/budsvape.js";
 import { Connector } from "./connectors/connector.js";
-import { Product } from "./types.js";
+import {
+  CardExtractionDiagnostic,
+  DiscoveredUrl,
+  ListingFailure,
+  Product,
+} from "./types.js";
 
 const program = new Command();
 
 interface CategorySelection {
   connector: string | null;
   id: string;
+}
+
+interface ScrapeDiagnostics {
+  discoveredUrls: DiscoveredUrl[];
+  listingFailures: ListingFailure[];
+  cardExtractionErrors: CardExtractionDiagnostic[];
 }
 
 program
@@ -99,6 +110,12 @@ program
         ? []
         : loadPreservedProducts(`${outputDir}/output.json`, refreshedDistributors);
     const allProducts: Product[] = [];
+    const diagnostics: ScrapeDiagnostics = {
+      discoveredUrls: [],
+      listingFailures: [],
+      cardExtractionErrors: [],
+    };
+    writeScrapeDiagnostics(outputDir, diagnostics);
 
     const browser = await chromium.launch({ headless: true });
 
@@ -132,6 +149,10 @@ program
             },
           });
           allProducts.push(...result.products);
+          diagnostics.discoveredUrls.push(...result.discoveredUrls);
+          diagnostics.listingFailures.push(...result.listingFailures);
+          diagnostics.cardExtractionErrors.push(...result.cardExtractionErrors);
+          writeScrapeDiagnostics(outputDir, diagnostics);
 
           console.log(
             `[${connector.name}] Summary: ${result.products.length} products, ${result.totalPages} pages, ${result.duplicatesSkipped} dupes`
@@ -153,7 +174,18 @@ program
       }
 
       exportResults(finalProducts, outputDir);
+      writeScrapeDiagnostics(outputDir, diagnostics);
       console.log(`\nDone. Total: ${finalProducts.length} products.`);
+
+      const finalListingFailures = diagnostics.listingFailures.filter(
+        (failure) => failure.final
+      );
+      if (finalListingFailures.length > 0) {
+        console.error(
+          `[Scraper] Definitive listing failures: ${finalListingFailures.length}. Diagnostics written to ${outputDir}/listing_failures.json`
+        );
+        process.exitCode = 2;
+      }
     } finally {
       await browser.close();
     }
@@ -209,6 +241,23 @@ function isProduct(value: unknown): value is Product {
 
 function hasMultipleDistributors(products: Product[]): boolean {
   return new Set(products.map((product) => product.distributor)).size > 1;
+}
+
+function writeScrapeDiagnostics(
+  outputDir: string,
+  diagnostics: ScrapeDiagnostics
+): void {
+  mkdirSync(outputDir, { recursive: true });
+  writeJson(`${outputDir}/discovered_urls.json`, diagnostics.discoveredUrls);
+  writeJson(`${outputDir}/listing_failures.json`, diagnostics.listingFailures);
+  writeJson(
+    `${outputDir}/card_extraction_errors.json`,
+    diagnostics.cardExtractionErrors
+  );
+}
+
+function writeJson(path: string, value: unknown): void {
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, "utf-8");
 }
 
 function parseCategorySelections(raw: string | undefined): CategorySelection[] {

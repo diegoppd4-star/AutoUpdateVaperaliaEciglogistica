@@ -2,12 +2,12 @@ services:
   autoupdate:
     build: .
     environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      CODEX_HOME: /codex-home
       CODEX_EXEC_PATH: codex
     volumes:
-      - ./runs:/app/runs
+      - ./runs:/app/runs:Z
+      - ${CODEX_HOST_HOME:-/var/home/pedro/.codex}:/codex-home:ro,Z
     command:
       - --run-name
       - docker-full-refresh
-      - --skip-scraper-install
-      - --skip-playwright-install

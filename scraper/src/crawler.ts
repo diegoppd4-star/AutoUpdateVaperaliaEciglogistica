@@ -1,7 +1,7 @@
 import { BrowserContext, Page } from "playwright";
 import { load } from "cheerio";
-import { Connector } from "./connectors/connector.js";
-import { Product, CrawlResult } from "./types.js";
+import { Connector, CategorySeed, CategoryResult } from "./connectors/connector.js";
+import { Product, CrawlResult, DiscoveredUrl, ListingFailure, CardExtractionDiagnostic } from "./types.js";
 import { canonicalizeUrl } from "./url-utils.js";
 import { buildSyntheticReference } from "./sku-builder.js";
 
@@ -24,6 +24,13 @@ const MAX_PAGES_PER_CATEGORY = 100;
 const SAVE_INTERVAL = 200;
 const LOG_INTERVAL = 50;
 
+interface PendingListingRetry {
+  seed: CategorySeed;
+  seedUrl: string;
+  listingPageUrl: string;
+  reason: string;
+}
+
 export async function crawl(
   connector: Connector,
   context: BrowserContext,
@@ -34,6 +41,10 @@ export async function crawl(
   let totalPages = 0;
   let duplicatesSkipped = 0;
   let debugSamples = 0;
+  const discoveredUrls: DiscoveredUrl[] = [];
+  const listingFailures: ListingFailure[] = [];
+  const cardExtractionErrors: CardExtractionDiagnostic[] = [];
+  const pendingListingRetries: PendingListingRetry[] = [];
 
   const inlineMode = connector.enrichInline === true;
   const inlineProducts: Product[] = [];
@@ -42,6 +53,163 @@ export async function crawl(
   // Phase 1: crawl category listings (single tab, sequential)
   const listingPage = await context.newPage();
   const detailPage = inlineMode ? await context.newPage() : null;
+
+  async function processListingPage(
+    seed: CategorySeed,
+    seedUrl: string,
+    listingPageUrl: string,
+    phase: "initial" | "retry"
+  ): Promise<{ ok: boolean; nextPageUrl: string | null; reason?: string }> {
+    console.log(
+      `[${connector.name}] Fetching${phase === "retry" ? " retry" : ""}: ${listingPageUrl} (${products.length} products so far)`
+    );
+
+    const success = await navigateWithRetry(listingPage, listingPageUrl);
+    if (!success) {
+      return { ok: false, nextPageUrl: null, reason: "navigation_failed_after_retries" };
+    }
+
+    if (inlineMode) {
+      await settlePageBeforeExtraction(listingPage, [
+        ".product.card-product",
+        ".product.card-product a.product-header",
+        ".product.card-product .product-body h5",
+      ]);
+    }
+
+    totalPages++;
+
+    if (options.debug && debugSamples < 2) {
+      await saveDebugHtml(
+        listingPage,
+        connector.name,
+        debugSamples,
+        options.debugDir
+      );
+      debugSamples++;
+    }
+
+    let result: CategoryResult;
+    try {
+      result = await connector.listProductsFromCategory(
+        listingPage,
+        listingPageUrl
+      );
+    } catch (err) {
+      return {
+        ok: false,
+        nextPageUrl: null,
+        reason: `listing_extraction_failed: ${err instanceof Error ? err.message : err}`,
+      };
+    }
+
+    for (const error of result.cardExtractionErrors || []) {
+      cardExtractionErrors.push({
+        connector: connector.name,
+        categoryId: seed.id,
+        category: seed.name,
+        categoryUrl: seedUrl,
+        listingPageUrl,
+        cardIndex: error.cardIndex,
+        reason: error.reason,
+        href: error.href,
+        name: error.name,
+        snippet: error.snippet,
+        failedAt: new Date().toISOString(),
+      });
+    }
+
+    for (const item of result.products) {
+      if (options.limit > 0 && products.length >= options.limit) break;
+
+      const canonical = canonicalizeUrl(item.url);
+      const duplicate = seenUrls.has(canonical);
+      discoveredUrls.push({
+        connector: connector.name,
+        categoryId: seed.id,
+        category: seed.name,
+        categoryUrl: seedUrl,
+        listingPageUrl,
+        productUrl: item.url,
+        productName: item.name,
+        canonicalUrl: canonical,
+        duplicate,
+        discoveredAt: new Date().toISOString(),
+      });
+
+      if (duplicate) {
+        duplicatesSkipped++;
+        continue;
+      }
+      seenUrls.add(canonical);
+
+      const product: Product = {
+        distributor: connector.name,
+        name: item.name,
+        url: item.url,
+        categoryId: seed.id,
+        category: seed.name,
+        categoryUrl: seed.url,
+      };
+      products.push(product);
+
+      // Inline enrichment: fetch variants immediately using the detail tab
+      if (inlineMode && detailPage) {
+        try {
+          await delay(connector.delayMs ?? DELAY_MS);
+          const navOk = await navigateWithRetry(detailPage, item.url);
+          if (navOk) {
+            await settlePageBeforeExtraction(detailPage, [
+              "select.select-attribute-product",
+              "select.select-attribute-product option",
+              "p.grey-texts",
+              "#description",
+            ]);
+            let rawVariants: Record<string, string[]> = {};
+
+            const html = await detailPage.content();
+            const $ = load(html);
+            const enrichment = await connector.enrichProductFromHtml($, item.url);
+            rawVariants = enrichment.variants;
+            if (enrichment.brand != null) product.brand = enrichment.brand;
+            if (enrichment.brandCandidates != null) product.brandCandidates = enrichment.brandCandidates;
+            if (enrichment.commercialBrand != null) product.commercialBrand = enrichment.commercialBrand;
+            if (enrichment.productLine) product.productLine = enrichment.productLine;
+            if (enrichment.reference) product.reference = enrichment.reference;
+            if (enrichment.fullName) product.name = enrichment.fullName;
+            if (enrichment.category) product.category = enrichment.category;
+            if (enrichment.breadcrumbPath?.length) product.breadcrumbPath = enrichment.breadcrumbPath;
+            if (enrichment.priceTaxExcluded != null) product.priceTaxExcluded = enrichment.priceTaxExcluded;
+            if (enrichment.description) product.description = enrichment.description;
+            if (enrichment.metaDescription) product.metaDescription = enrichment.metaDescription;
+            if (enrichment.category && enrichment.brand) {
+              const synRef = buildSyntheticReference(product.name, enrichment.brand, enrichment.category);
+              if (synRef) product.syntheticReference = synRef;
+            }
+
+            const expanded = expandVariants(
+              product,
+              rawVariants,
+              enrichment.variantUrlSegments,
+              enrichment.variantReferenceValues
+            );
+            inlineProducts.push(...expanded);
+          } else {
+            console.warn(`[${connector.name}] Inline enrich failed: ${item.url}`);
+            inlineProducts.push({ ...product, variants: {} });
+          }
+        } catch (err) {
+          console.warn(
+            `[${connector.name}] Inline enrich error: ${item.url}: ${err instanceof Error ? err.message : err}`
+          );
+          inlineProducts.push({ ...product, variants: {} });
+        }
+      }
+    }
+
+    return { ok: true, nextPageUrl: result.nextPageUrl };
+  }
+
   try {
     console.log(
       `[${connector.name}] Phase 1: Crawling ${seeds.length} categories${inlineMode ? " (inline enrichment)" : ""}`
@@ -73,103 +241,28 @@ export async function crawl(
           }
           visitedInCategory.add(currentUrl);
 
-          console.log(
-            `[${connector.name}] Fetching: ${currentUrl} (${products.length} products so far)`
-          );
-
-          const success = await navigateWithRetry(listingPage, currentUrl);
-          if (!success) {
+          const result = await processListingPage(seed, seedUrl, currentUrl, "initial");
+          if (!result.ok) {
+            const reason = result.reason || "listing_page_failed";
+            listingFailures.push({
+              connector: connector.name,
+              categoryId: seed.id,
+              category: seed.name,
+              categoryUrl: seedUrl,
+              listingPageUrl: currentUrl,
+              phase: "initial",
+              final: false,
+              reason,
+              failedAt: new Date().toISOString(),
+            });
+            pendingListingRetries.push({ seed, seedUrl, listingPageUrl: currentUrl, reason });
             console.error(
               `[${connector.name}] Failed to load after retries: ${currentUrl}`
             );
             break;
           }
 
-          totalPages++;
           categoryPageCount++;
-
-          if (options.debug && debugSamples < 2) {
-            await saveDebugHtml(
-              listingPage,
-              connector.name,
-              debugSamples,
-              options.debugDir
-            );
-            debugSamples++;
-          }
-
-          const result = await connector.listProductsFromCategory(
-            listingPage,
-            currentUrl
-          );
-
-          for (const item of result.products) {
-            if (options.limit > 0 && products.length >= options.limit) break;
-
-            const canonical = canonicalizeUrl(item.url);
-            if (seenUrls.has(canonical)) {
-              duplicatesSkipped++;
-              continue;
-            }
-            seenUrls.add(canonical);
-
-            const product: Product = {
-              distributor: connector.name,
-              name: item.name,
-              url: item.url,
-              categoryId: seed.id,
-              category: seed.name,
-              categoryUrl: seed.url,
-            };
-            products.push(product);
-
-            // Inline enrichment: fetch variants immediately using the detail tab
-            if (inlineMode && detailPage) {
-              try {
-                await delay(connector.delayMs ?? DELAY_MS);
-                const navOk = await navigateWithRetry(detailPage, item.url);
-                if (navOk) {
-                  let rawVariants: Record<string, string[]> = {};
-
-                  const html = await detailPage.content();
-                  const $ = load(html);
-                  const enrichment = await connector.enrichProductFromHtml($, item.url);
-                  rawVariants = enrichment.variants;
-                  if (enrichment.brand != null) product.brand = enrichment.brand;
-                  if (enrichment.brandCandidates != null) product.brandCandidates = enrichment.brandCandidates;
-                  if (enrichment.commercialBrand != null) product.commercialBrand = enrichment.commercialBrand;
-                  if (enrichment.productLine) product.productLine = enrichment.productLine;
-                  if (enrichment.reference) product.reference = enrichment.reference;
-                  if (enrichment.fullName) product.name = enrichment.fullName;
-                  if (enrichment.category) product.category = enrichment.category;
-                  if (enrichment.breadcrumbPath?.length) product.breadcrumbPath = enrichment.breadcrumbPath;
-                  if (enrichment.priceTaxExcluded != null) product.priceTaxExcluded = enrichment.priceTaxExcluded;
-                  if (enrichment.description) product.description = enrichment.description;
-                  if (enrichment.metaDescription) product.metaDescription = enrichment.metaDescription;
-                  if (enrichment.category && enrichment.brand) {
-                    const synRef = buildSyntheticReference(product.name, enrichment.brand, enrichment.category);
-                    if (synRef) product.syntheticReference = synRef;
-                  }
-
-                  const expanded = expandVariants(
-                    product,
-                    rawVariants,
-                    enrichment.variantUrlSegments,
-                    enrichment.variantReferenceValues
-                  );
-                  inlineProducts.push(...expanded);
-                } else {
-                  console.warn(`[${connector.name}] Inline enrich failed: ${item.url}`);
-                  inlineProducts.push({ ...product, variants: {} });
-                }
-              } catch (err) {
-                console.warn(
-                  `[${connector.name}] Inline enrich error: ${item.url}: ${err instanceof Error ? err.message : err}`
-                );
-                inlineProducts.push({ ...product, variants: {} });
-              }
-            }
-          }
 
           currentUrl = result.nextPageUrl;
           if (currentUrl) {
@@ -184,6 +277,46 @@ export async function crawl(
         `[${connector.name}] Category done (${categoryPageCount} pages)`
       );
       await delay(DELAY_MS);
+    }
+
+    if (pendingListingRetries.length > 0) {
+      console.warn(
+        `[${connector.name}] Retrying ${pendingListingRetries.length} failed category listing pages`
+      );
+    }
+
+    for (const pending of pendingListingRetries) {
+      let currentUrl: string | null = pending.listingPageUrl;
+      const visitedRetry = new Set<string>();
+      let retryPageCount = 0;
+      while (currentUrl) {
+        if (visitedRetry.has(currentUrl) || retryPageCount >= MAX_PAGES_PER_CATEGORY) break;
+        visitedRetry.add(currentUrl);
+        const result = await processListingPage(
+          pending.seed,
+          pending.seedUrl,
+          currentUrl,
+          "retry"
+        );
+        if (!result.ok) {
+          listingFailures.push({
+            connector: connector.name,
+            categoryId: pending.seed.id,
+            category: pending.seed.name,
+            categoryUrl: pending.seedUrl,
+            listingPageUrl: currentUrl,
+            phase: "retry",
+            final: true,
+            reason: result.reason || pending.reason || "listing_page_failed_after_retry",
+            failedAt: new Date().toISOString(),
+          });
+          console.error(`[${connector.name}] Definitive listing failure: ${currentUrl}`);
+          break;
+        }
+        retryPageCount++;
+        currentUrl = result.nextPageUrl;
+        if (currentUrl) await delay(DELAY_MS);
+      }
     }
   } finally {
     if (detailPage) await detailPage.close();
@@ -209,6 +342,9 @@ export async function crawl(
       totalCategories: seeds.length,
       totalPages,
       duplicatesSkipped,
+      discoveredUrls,
+      listingFailures,
+      cardExtractionErrors,
     };
   }
 
@@ -347,6 +483,9 @@ export async function crawl(
     totalCategories: seeds.length,
     totalPages,
     duplicatesSkipped,
+    discoveredUrls,
+    listingFailures,
+    cardExtractionErrors,
   };
 }
 
@@ -433,6 +572,48 @@ export async function navigateWithRetry(page: Page, url: string): Promise<boolea
     }
   }
   return false;
+}
+
+async function settlePageBeforeExtraction(
+  page: Page,
+  selectors: string[]
+): Promise<void> {
+  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
+  for (const selector of selectors) {
+    await page.waitForSelector(selector, { timeout: 3000 }).catch(() => {});
+  }
+  await waitForStableSelectorCount(page, selectors, 3, 250);
+  await page.waitForTimeout(500);
+}
+
+async function waitForStableSelectorCount(
+  page: Page,
+  selectors: string[],
+  samples: number,
+  intervalMs: number
+): Promise<void> {
+  let lastSignature: string | null = null;
+  let stableSamples = 0;
+  const maxSamples = samples * 8;
+
+  for (let sample = 0; sample < maxSamples; sample++) {
+    const counts = await Promise.all(
+      selectors.map((selector) =>
+        page.locator(selector).count().catch(() => 0)
+      )
+    );
+    const signature = counts.join("|");
+
+    if (signature === lastSignature) {
+      stableSamples++;
+      if (stableSamples >= samples) return;
+    } else {
+      lastSignature = signature;
+      stableSamples = 1;
+    }
+
+    await page.waitForTimeout(intervalMs);
+  }
 }
 
 async function saveDebugHtml(

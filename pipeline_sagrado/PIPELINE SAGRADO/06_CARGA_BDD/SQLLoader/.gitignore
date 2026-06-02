@@ -1,0 +1,7 @@
+/input_master/
+/vendor/
+/backups/
+/run_output/
+/logs/
+/Productos_cliente_Diego_Poole_Prieto.csv
+*.env

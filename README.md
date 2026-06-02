@@ -75,20 +75,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
 
 El objetivo de despliegue recomendado es Docker. La imagen incluye:
 
+- PowerShell para ejecutar el orquestador.
 - Node.js 22 + npm.
 - dependencias del scraper.
 - Chromium de Playwright.
 - Codex CLI (`@openai/codex`) para la capa IA no determinista.
-
-El contenedor no depende de PowerShell: entra por `node /app/run_auto_update.mjs` y ejecuta los scripts JS del Pipeline Sagrado directamente.
-
-Requisitos en Windows:
-
-```cmd
-winget install --id Docker.DockerDesktop --source winget --accept-package-agreements --accept-source-agreements
-```
-
-Despues de instalar Docker Desktop puede hacer falta reiniciar Windows o abrir Docker Desktop una vez para que el daemon quede activo.
 
 Build:
 
@@ -109,22 +100,13 @@ Ejecucion completa:
 docker run --rm `
   -e OPENAI_API_KEY=$env:OPENAI_API_KEY `
   -v "${PWD}\runs:/app/runs" `
-  autoupdate-vaperalia-eciglogistica `
-  --run-name "docker-full-refresh" `
-  --skip-scraper-install `
-  --skip-playwright-install
+  autoupdate-vaperalia-eciglogistica
 ```
 
 Con `docker compose`:
 
 ```powershell
 docker compose up --build
-```
-
-En Windows tambien puedes lanzar:
-
-```cmd
-run_docker_full.cmd
 ```
 
 Para probar sin capa IA:
@@ -134,8 +116,6 @@ docker run --rm `
   -v "${PWD}\runs:/app/runs" `
   autoupdate-vaperalia-eciglogistica `
   --run-name "docker-test" `
-  --skip-scraper-install `
-  --skip-playwright-install `
   --skip-codex-exec
 ```
 
@@ -164,7 +144,8 @@ Esto ejecuta:
 2. Pipeline 1 determinista.
 3. Pipeline 2 rescate por descripcion.
 4. Pipeline 3 IA no determinista con CodexExec.
-5. Resumen de outputs.
+5. Pipeline 5 master JSON para BDD.
+6. Resumen de outputs.
 
 ## Uso con scraper externo
 
@@ -210,6 +191,46 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
   -SkipCodexExec
 ```
 
+## Master JSON y BDD
+
+El runner Node/Docker genera por defecto:
+
+```text
+pipeline-work/outputs/master-json/master_matched_both.json
+pipeline-work/outputs/master-json/master_only_eciglogistica.json
+pipeline-work/outputs/master-json/master_only_vaperalia.json
+```
+
+La carga BDD es opcional:
+
+```bash
+docker compose run --rm autoupdate --load-bdd
+```
+
+Para generar solo master desde una run existente:
+
+```bash
+docker compose run --rm autoupdate --only-build-master --from-run 20260601-222111-docker-full-refresh
+```
+
+Para cargar BDD desde una run existente sin repetir scraper, matching ni CodexExec:
+
+```bash
+docker compose run --rm autoupdate --only-load-bdd --from-run 20260601-222111-docker-full-refresh
+```
+
+Para validar la carga sin insertar:
+
+```bash
+docker compose run --rm autoupdate --only-load-bdd --from-run 20260601-222111-docker-full-refresh --load-bdd-dry-run
+```
+
+La carga real requiere `DATABASE_URL`. El enriquecimiento EAN13 usa:
+
+```text
+pipeline_sagrado/PIPELINE SAGRADO/06_CARGA_BDD/SQLLoader/Productos_cliente_Diego_Poole_Prieto.csv
+```
+
 ## Outputs por ejecucion
 
 Cada ejecucion crea una carpeta:
@@ -227,6 +248,9 @@ Dentro:
 - `pipeline-work/outputs/reviews/description-rescue-decisions.json`
 - `pipeline-work/outputs/reviewed-rescues.matches.valid.json`
 - `pipeline-work/outputs/audits/reviewed-rescues.audit.md`
+- `pipeline-work/outputs/master-json/master_matched_both.json`
+- `pipeline-work/outputs/master-json/master_only_eciglogistica.json`
+- `pipeline-work/outputs/master-json/master_only_vaperalia.json`
 - `run-summary.json`
 - `logs/run.log`
 
@@ -241,12 +265,13 @@ Cada candidato se cierra como:
 
 Si no hay certeza suficiente para aceptar, se rechaza con motivo.
 
-## Futuro BDD
+## Flags de salto y reentrada
 
-Este runner cierra la generacion de resultados del pipeline.
-
-La carga incremental a BDD debe conectarse despues leyendo:
-
-- `general.matches.valid.json`
-- `reviewed-rescues.matches.valid.json`
-- familias `solo Eciglogistica`, `solo Vaperalia` y `matched_both` cuando se genere la exportacion maestra correspondiente.
+- `--dry-run`: valida entrada y no ejecuta pipelines.
+- `--skip-codex-exec`: salta Pipeline 3 IA.
+- `--skip-build-master`: salta Pipeline 5 master BDD.
+- `--load-bdd`: ejecuta Pipeline 6 al final.
+- `--load-bdd-dry-run`: prepara/reporta carga BDD sin insertar.
+- `--skip-ean-enrichment`: carga sin enriquecer EAN13.
+- `--only-build-master --from-run <run|path>`: solo Pipeline 5 desde una run existente.
+- `--only-load-bdd --from-run <run|path>`: solo Pipeline 6 desde una run existente; si falta master, lo genera antes.

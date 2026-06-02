@@ -5,6 +5,15 @@ import { EnrichmentResult } from "../types.js";
 export interface CategoryResult {
   products: Array<{ name: string; url: string }>;
   nextPageUrl: string | null;
+  cardExtractionErrors?: CardExtractionError[];
+}
+
+export interface CardExtractionError {
+  cardIndex: number;
+  reason: string;
+  href?: string;
+  name?: string;
+  snippet?: string;
 }
 
 export interface CategorySeed {

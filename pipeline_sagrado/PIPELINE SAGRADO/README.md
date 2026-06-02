@@ -1,6 +1,6 @@
 # PIPELINE SAGRADO
 
-Congelacion operativa de los dos pipelines deterministas del proyecto Eciglogistica / Vaperalia.
+Congelacion operativa del pipeline Eciglogistica / Vaperalia.
 
 Esta carpeta existe para que otra IA, otro desarrollador o nosotros mismos podamos repetir el trabajo sin depender de memoria conversacional.
 
@@ -10,10 +10,14 @@ Esta carpeta existe para que otra IA, otro desarrollador o nosotros mismos podam
 - `02_PIPELINE_RESCATE_DESCRIPCION`: rescate determinista por descripcion sobre huerfanos/sobrantes.
 - `03_INPUTS`: lista de tramos congelada usada para el relanzamiento completo.
 - `04_ANEXO_CAPA_IA_NO_DETERMINISTA`: descripcion, ledger de referencia y runner CodexExec de la capa IA, separado del pipeline determinista.
+- `05_MASTER_BDD`: generacion determinista de los tres master JSON para BDD.
+- `06_CARGA_BDD`: SQLLoader para carga opcional a BDD.
 - `00_INSTRUCCIONES`: contrato operativo, cifras de referencia e instrucciones para otra IA.
 - `run_pipeline_1_principal.ps1`: wrapper reproducible del pipeline principal.
 - `run_pipeline_2_rescate_descripcion.ps1`: wrapper reproducible del rescate por descripcion.
 - `run_pipeline_3_ia_no_determinista.ps1`: wrapper reproducible de la capa IA no determinista con CodexExec.
+- `run_pipeline_5_master_bdd.ps1`: wrapper reproducible de master JSON para BDD.
+- `run_pipeline_6_load_bdd.ps1`: wrapper reproducible de carga BDD opcional.
 
 ## Regla de oro
 
@@ -69,6 +73,26 @@ Para auditar el paquete de contexto sin llamar a CodexExec:
 
 ```powershell
 & ".\PIPELINE SAGRADO\run_pipeline_3_ia_no_determinista.ps1" -PipelineWorkDir "C:\ruta\a\la\carpeta\temporal" -OriginalScrapeJson "C:\ruta\output.json" -DryRun
+```
+
+El master BDD se genera despues de Pipeline 3:
+
+```powershell
+& ".\PIPELINE SAGRADO\run_pipeline_5_master_bdd.ps1" -PipelineWorkDir "C:\ruta\a\la\carpeta\temporal"
+```
+
+Ese quinto comando genera:
+
+```text
+outputs/master-json/master_matched_both.json
+outputs/master-json/master_only_eciglogistica.json
+outputs/master-json/master_only_vaperalia.json
+```
+
+La carga BDD es opcional y requiere `DATABASE_URL` salvo en `-DryRun`:
+
+```powershell
+& ".\PIPELINE SAGRADO\run_pipeline_6_load_bdd.ps1" -PipelineWorkDir "C:\ruta\a\la\carpeta\temporal" -DryRun
 ```
 
 ## Inputs esperados

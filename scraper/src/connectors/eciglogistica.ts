@@ -1,6 +1,6 @@
 import { Page } from "playwright";
 import { CheerioAPI } from "cheerio";
-import { Connector, CategoryResult, CategorySeed } from "./connector.js";
+import { Connector, CategoryResult, CategorySeed, CardExtractionError } from "./connector.js";
 import { EnrichmentResult } from "../types.js";
 import { buildSyntheticReference } from "../sku-builder.js";
 
@@ -46,28 +46,48 @@ export class EciglogisticaConnector implements Connector {
     categoryUrl: string
   ): Promise<CategoryResult> {
     const products: Array<{ name: string; url: string }> = [];
+    const cardExtractionErrors: CardExtractionError[] = [];
 
     // Product structure: div.product.card-product > form > a.product-header[href] + div.product-body h5
     const cards = await page.$$(".product.card-product");
 
-    for (const card of cards) {
+    for (const [cardIndex, card] of cards.entries()) {
       try {
         const link = await card.$("a.product-header");
         const nameEl = await card.$(".product-body h5");
-        if (!link || !nameEl) continue;
+        if (!link || !nameEl) {
+          cardExtractionErrors.push({
+            cardIndex,
+            reason: !link ? "missing_product_link" : "missing_product_name",
+            snippet: shortSnippet(await card.textContent()),
+          });
+          continue;
+        }
 
         const href = await link.getAttribute("href");
         const name = (await nameEl.textContent())?.trim() ?? "";
         if (href && name) {
           products.push({ name, url: new URL(href, this.baseUrl).toString() });
+        } else {
+          cardExtractionErrors.push({
+            cardIndex,
+            reason: !href ? "empty_product_href" : "empty_product_name",
+            href: href || undefined,
+            name: name || undefined,
+            snippet: shortSnippet(await card.textContent()),
+          });
         }
-      } catch {
-        // Skip individual extraction errors
+      } catch (error) {
+        cardExtractionErrors.push({
+          cardIndex,
+          reason: error instanceof Error ? error.message : String(error),
+          snippet: shortSnippet(await card.textContent().catch(() => "")),
+        });
       }
     }
 
     const nextPageUrl = await this.findNextPage(page);
-    return { products, nextPageUrl };
+    return { products, nextPageUrl, cardExtractionErrors };
   }
 
   enrichProductFromHtml(
@@ -231,4 +251,8 @@ export class EciglogisticaConnector implements Connector {
 
     return null;
   }
+}
+
+function shortSnippet(value: string | null | undefined): string {
+  return String(value || "").replace(/\s+/g, " ").trim().slice(0, 500);
 }
