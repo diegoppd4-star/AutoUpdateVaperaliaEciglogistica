@@ -1,0 +1,339 @@
+{
+  "generatedAt": "2026-06-03T13:48:20.074Z",
+  "run": "refined-ecig-full-known-backfill-20260603-140029",
+  "oldPath": "C:\\Users\\diego\\Documents\\New project\\AutoUpdateVaperaliaEciglogistica\\runs\\20260601-201610-full-e2e-background-20260601-201610\\scraper-output\\output.json",
+  "newPath": "C:\\Users\\diego\\Documents\\New project\\AutoUpdateVaperaliaEciglogistica\\runs\\refined-ecig-full-known-backfill-20260603-140029\\output.json",
+  "stdoutPath": "C:\\Users\\diego\\Documents\\New project\\AutoUpdateVaperaliaEciglogistica\\runs\\refined-ecig-full-known-backfill-20260603-140029\\scraper.stdout.log",
+  "stderrPath": "C:\\Users\\diego\\Documents\\New project\\AutoUpdateVaperaliaEciglogistica\\runs\\refined-ecig-full-known-backfill-20260603-140029\\scraper.stderr.log",
+  "knownUrls": "C:\\Users\\diego\\Documents\\New project\\AutoUpdateVaperaliaEciglogistica\\runs\\20260601-201610-full-e2e-background-20260601-201610\\scraper-output\\output.json",
+  "durationMinutes": 45.6,
+  "oldRows": 5533,
+  "newRows": 5525,
+  "oldBaseUrls": 3245,
+  "newBaseUrls": 3245,
+  "missingBaseUrlCount": 0,
+  "addedBaseUrlCount": 0,
+  "rowCountDiffCount": 13,
+  "missingBaseUrls": [],
+  "addedBaseUrls": [],
+  "rowCountDiffs": [
+    {
+      "url": "https://nueva.eciglogistica.com/dinner-lady-salts-caramel-tobacco-10ml",
+      "oldRows": 2,
+      "newRows": 1,
+      "oldName": "Dinner Lady Salts Caramel Tobacco 10ml - 10mg",
+      "newName": "Dinner Lady Salts Caramel Tobacco 10ml - 20mg",
+      "onlyOld": [
+        {
+          "name": "Dinner Lady Salts Caramel Tobacco 10ml - 10mg",
+          "variants": {
+            "MG": "10mg"
+          },
+          "reference": "99653744"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/drops-conquerors-ramses-10ml",
+      "oldRows": 5,
+      "newRows": 4,
+      "oldName": "Drops Conquerors Ramses 10ml - 0mg",
+      "newName": "Drops Conquerors Ramses 10ml - 0mg",
+      "onlyOld": [
+        {
+          "name": "Drops Conquerors Ramses 10ml - 12mg",
+          "variants": {
+            "MG": "12mg"
+          },
+          "reference": "99643804"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/hellvape-dead-rabbit-3-2024-rta",
+      "oldRows": 2,
+      "newRows": 1,
+      "oldName": "Hellvape Dead Rabbit 3 2024 RTA - MATTE BLACK",
+      "newName": "Hellvape Dead Rabbit 3 2024 RTA - SS",
+      "onlyOld": [
+        {
+          "name": "Hellvape Dead Rabbit 3 2024 RTA - MATTE BLACK",
+          "variants": {
+            "COLOR": "MATTE BLACK"
+          },
+          "reference": "99665779"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/hellvape-drop-dead-2-rda",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Hellvape Drop Dead 2 RDA - BLUE",
+      "newName": "Hellvape Drop Dead 2 RDA - BLUE",
+      "onlyOld": [
+        {
+          "name": "Hellvape Drop Dead 2 RDA - S.S",
+          "variants": {
+            "COLOR": "S.S"
+          },
+          "reference": "99664165"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/o4v-base-propilenglicol",
+      "oldRows": 6,
+      "newRows": 8,
+      "oldName": "O4V Base Propilenglicol - 1000ml",
+      "newName": "O4V Base Propilenglicol - 1000ml",
+      "onlyOld": [],
+      "onlyNew": [
+        {
+          "name": "O4V Base Propilenglicol - 10ml",
+          "variants": {
+            "ML": "10ml"
+          },
+          "reference": "99669830"
+        },
+        {
+          "name": "O4V Base Propilenglicol - 30ml",
+          "variants": {
+            "ML": "30ml"
+          },
+          "reference": "99669830"
+        }
+      ]
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oil4vap-base-glicerina",
+      "oldRows": 4,
+      "newRows": 5,
+      "oldName": "O4V Base Glicerina - 1000ml",
+      "newName": "O4V Base Glicerina - 1000ml",
+      "onlyOld": [],
+      "onlyNew": [
+        {
+          "name": "O4V Base Glicerina - 10ml",
+          "variants": {
+            "ML": "10ml"
+          },
+          "reference": "99649828"
+        }
+      ]
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-blue-sour-razz-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Blue Sour Razz 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Blue Sour Razz 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Blue Sour Razz 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99665853"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-cherry-fizz-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Cherry Fizz 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Cherry Fizz 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Cherry Fizz 10ml - 10MG",
+          "variants": {
+            "MG": "10MG"
+          },
+          "reference": "99665846"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Cherry Fizz 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99665846"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Cherry Fizz 10ml - 20MG",
+          "variants": {
+            "MG": "20MG"
+          },
+          "reference": "99665846"
+        }
+      ],
+      "onlyNew": [
+        {
+          "name": "Oxva Ox Passion Salts Cherry Fizz 10ml - 10MG",
+          "variants": {
+            "MG": "10MG"
+          },
+          "reference": "99665856"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Cherry Fizz 10ml - 20MG",
+          "variants": {
+            "MG": "20MG"
+          },
+          "reference": "99665856"
+        }
+      ]
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-citrus-mango-guava-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 10MG",
+          "variants": {
+            "MG": "10MG"
+          },
+          "reference": "99667382"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99667382"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 20MG",
+          "variants": {
+            "MG": "20MG"
+          },
+          "reference": "99667382"
+        }
+      ],
+      "onlyNew": [
+        {
+          "name": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 10MG",
+          "variants": {
+            "MG": "10MG"
+          },
+          "reference": "99667372"
+        },
+        {
+          "name": "Oxva Ox Passion Salts Citrus Mango Guava 10ml - 20MG",
+          "variants": {
+            "MG": "20MG"
+          },
+          "reference": "99667372"
+        }
+      ]
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-melon-banana-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Melon Banana 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Melon Banana 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Melon Banana 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99667365"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-strawberry-melon-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Strawberry Melon 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Strawberry Melon 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Strawberry Melon 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99665861"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/oxva-ox-passion-salts-strawberry-raspberry-cherry-10ml",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Oxva Ox Passion Salts Strawberry Raspberry Cherry 10ml - 10MG",
+      "newName": "Oxva Ox Passion Salts Strawberry Raspberry Cherry 10ml - 10MG",
+      "onlyOld": [
+        {
+          "name": "Oxva Ox Passion Salts Strawberry Raspberry Cherry 10ml - 15MG",
+          "variants": {
+            "MG": "15MG"
+          },
+          "reference": "99665848"
+        }
+      ],
+      "onlyNew": []
+    },
+    {
+      "url": "https://nueva.eciglogistica.com/vaporesso-gen-max-kit",
+      "oldRows": 3,
+      "newRows": 2,
+      "oldName": "Vaporesso Gen Max Kit - GRADIENT PURPLE",
+      "newName": "Vaporesso Gen Max Kit - GRADIENT PURPLE",
+      "onlyOld": [
+        {
+          "name": "Vaporesso Gen Max Kit - PLATINUM GOLD",
+          "variants": {
+            "COLOR": "PLATINUM GOLD"
+          },
+          "reference": "99665520"
+        }
+      ],
+      "onlyNew": []
+    }
+  ],
+  "oldCategoryCounts": {
+    "accesorios": 49,
+    "alquimia": 839,
+    "atomizadores": 46,
+    "baterias-y-cargadores": 38,
+    "cbd": 19,
+    "coils": 236,
+    "desechable": 171,
+    "diy": 76,
+    "liquidos": 1532,
+    "mods-y-kits": 430,
+    "ngp": 27,
+    "nicotine-salts": 1331,
+    "pod-systems": 737,
+    "prefilled-pod": 2
+  },
+  "newCategoryCounts": {
+    "accesorios": 49,
+    "alquimia": 842,
+    "atomizadores": 44,
+    "baterias-y-cargadores": 38,
+    "cbd": 19,
+    "coils": 236,
+    "desechable": 171,
+    "diy": 76,
+    "liquidos": 1525,
+    "mods-y-kits": 388,
+    "ngp": 27,
+    "nicotine-salts": 1330,
+    "pod-systems": 778,
+    "prefilled-pod": 2
+  }
+}
