@@ -264,6 +264,13 @@ def reference_tuple(record):
     )
 
 
+LINK_ID = 0
+LINK_URL = 19
+LINK_VARIANTE = 21
+LINK_DISTRIBUIDORA_ID = 23
+LINK_REFERENCIA_ID = 24
+
+
 def link_tuple(record, side, distribuidora_id, row, resolution):
     url = row.get("url") or (record.get("eciglogistica_url") if side == "eciglogistica" else record.get("vaperalia_url")) or ""
     variant = link_variant(row, record)
@@ -324,21 +331,33 @@ def build_payload():
 
     referencias = [reference_tuple(record) for record in records]
     links = []
+    load_items = []
     unresolved_vaperalia = []
     for record in records:
+        item_links = []
         if record["_source_kind"] in ("matched_both", "only_eciglogistica"):
             row, resolution = row_for_link(record, "eciglogistica")
-            links.append(link_tuple(record, "eciglogistica", DISTRIBUIDORAS["eciglogistica"]["id"], row, resolution))
+            link = link_tuple(record, "eciglogistica", DISTRIBUIDORAS["eciglogistica"]["id"], row, resolution)
+            links.append(link)
+            item_links.append(link)
         if record["_source_kind"] in ("matched_both", "only_vaperalia"):
             row, resolution = row_for_link(record, "vaperalia", vaperalia_index)
             if record["_source_kind"] == "matched_both" and resolution == "unresolved":
                 unresolved_vaperalia.append({"id": record.get("id"), "url": record.get("vaperalia_url")})
-            links.append(link_tuple(record, "vaperalia", DISTRIBUIDORAS["vaperalia"]["id"], row, resolution))
+            link = link_tuple(record, "vaperalia", DISTRIBUIDORAS["vaperalia"]["id"], row, resolution)
+            links.append(link)
+            item_links.append(link)
+        load_items.append({
+            "record": record,
+            "reference": reference_tuple(record),
+            "links": item_links,
+        })
 
     return {
         "records": records,
         "referencias": referencias,
         "links": links,
+        "load_items": load_items,
         "sku_changes": sku_changes,
         "duplicate_eans": duplicate_eans,
         "ean_nulls": ean_nulls,
@@ -363,11 +382,111 @@ def run_ean_enrichment():
     }
 
 
+def reference_with_id(reference, referencia_id):
+    values = list(reference)
+    values[0] = referencia_id
+    return tuple(values)
+
+
+def link_with_reference(link, referencia_id):
+    values = list(link)
+    values[LINK_REFERENCIA_ID] = referencia_id
+    values[LINK_ID] = stable_id(f"link:{referencia_id}:{values[LINK_DISTRIBUIDORA_ID]}:{values[LINK_VARIANTE]}")
+    return tuple(values)
+
+
+def find_existing_link_by_url(cur, link):
+    url = link[LINK_URL]
+    if not url:
+        return None
+
+    cur.execute(
+        """
+        select id, referencia_id, distribuidora_id, url, variante
+        from public.referencia_distribuidora_links
+        where distribuidora_id = %s
+          and url = %s
+          and variante = %s
+        """,
+        (link[LINK_DISTRIBUIDORA_ID], url, link[LINK_VARIANTE]),
+    )
+    rows = cur.fetchall()
+    if not rows:
+        return None
+    if len(rows) > 1:
+        raise RuntimeError(
+            "Ambiguous existing links for "
+            f"distribuidora_id={link[LINK_DISTRIBUIDORA_ID]}, url={url}, variante={link[LINK_VARIANTE]}"
+        )
+    row = rows[0]
+    return {
+        "id": row[0],
+        "referencia_id": row[1],
+        "distribuidora_id": row[2],
+        "url": row[3],
+        "variante": row[4],
+    }
+
+
+def sku_exists_elsewhere(cur, sku, referencia_id):
+    if not sku:
+        return False
+    cur.execute(
+        "select 1 from public.referencias where sku = %s and id <> %s limit 1",
+        (sku, referencia_id),
+    )
+    return cur.fetchone() is not None
+
+
+def ean_exists_elsewhere(cur, ean13, referencia_id):
+    if not ean13:
+        return False
+    cur.execute(
+        "select 1 from public.referencias where ean13 = %s and id <> %s limit 1",
+        (ean13, referencia_id),
+    )
+    return cur.fetchone() is not None
+
+
+def avoid_existing_reference_uniques(cur, reference, stats):
+    values = list(reference)
+    referencia_id = values[0]
+    ean_index = 9
+    sku_index = 21
+
+    if ean_exists_elsewhere(cur, values[ean_index], referencia_id):
+        values[ean_index] = None
+        stats["existing_eans_set_null"] += 1
+
+    if sku_exists_elsewhere(cur, values[sku_index], referencia_id):
+        base = values[sku_index] or f"REF-{referencia_id}"
+        for attempt in range(20):
+            suffix = hashlib.sha256(f"{referencia_id}:{base}:{attempt}".encode("utf-8")).hexdigest()[:12]
+            candidate = f"{str(base)[:107]}-{suffix}"
+            if not sku_exists_elsewhere(cur, candidate, referencia_id):
+                values[sku_index] = candidate
+                stats["existing_skus_renamed"] += 1
+                break
+        else:
+            raise RuntimeError(f"No se pudo generar SKU unico para referencia {referencia_id}")
+
+    return tuple(values)
+
+
 def execute_load(dsn, payload, batch_size):
     distribuidoras = [
         (data["id"], data["nombre"], data["tiempo_entrega_default_dias"])
         for data in DISTRIBUIDORAS.values()
     ]
+    stats = {
+        "references_upserted": 0,
+        "links_upserted": 0,
+        "new_reference_ids": 0,
+        "existing_reference_ids_reused": 0,
+        "legacy_url_links_resolved": 0,
+        "existing_skus_renamed": 0,
+        "existing_eans_set_null": 0,
+    }
 
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
@@ -413,7 +532,6 @@ def execute_load(dsn, payload, batch_size):
                   tamano = excluded.tamano,
                   sku = excluded.sku
             """
-            cur.executemany(ref_sql, payload["referencias"])
 
             link_sql = """
                 insert into public.referencia_distribuidora_links (
@@ -425,7 +543,7 @@ def execute_load(dsn, payload, batch_size):
                   distribuidora_id, referencia_id
                 )
                 values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                on conflict (id) do update set
+                on conflict (referencia_id, distribuidora_id, variante) do update set
                   activo = excluded.activo,
                   base_url = excluded.base_url,
                   brand_candidates = excluded.brand_candidates,
@@ -447,11 +565,38 @@ def execute_load(dsn, payload, batch_size):
                   url = excluded.url,
                   variant_signature = excluded.variant_signature,
                   variante = excluded.variante,
-                  variants_json = excluded.variants_json,
-                  distribuidora_id = excluded.distribuidora_id,
-                  referencia_id = excluded.referencia_id
+                  variants_json = excluded.variants_json
             """
-            cur.executemany(link_sql, payload["links"])
+
+            for item in payload["load_items"]:
+                existing_links = []
+                for link in item["links"]:
+                    existing = find_existing_link_by_url(cur, link)
+                    if existing:
+                        existing_links.append(existing)
+
+                existing_reference_ids = {row["referencia_id"] for row in existing_links if row["referencia_id"] is not None}
+                if len(existing_reference_ids) > 1:
+                    refs = ", ".join(str(value) for value in sorted(existing_reference_ids))
+                    urls = ", ".join(link[LINK_URL] or "" for link in item["links"])
+                    raise RuntimeError(f"Matched input points to multiple existing referencias ({refs}) for urls: {urls}")
+
+                if existing_reference_ids:
+                    referencia_id = next(iter(existing_reference_ids))
+                    stats["existing_reference_ids_reused"] += 1
+                    stats["legacy_url_links_resolved"] += len(existing_links)
+                else:
+                    referencia_id = item["reference"][0]
+                    stats["new_reference_ids"] += 1
+
+                reference = reference_with_id(item["reference"], referencia_id)
+                reference = avoid_existing_reference_uniques(cur, reference, stats)
+                cur.execute(ref_sql, reference)
+                stats["references_upserted"] += 1
+
+                for link in item["links"]:
+                    cur.execute(link_sql, link_with_reference(link, referencia_id))
+                    stats["links_upserted"] += 1
 
             cur.execute("select count(*) from public.referencias")
             referencias_count = cur.fetchone()[0]
@@ -464,6 +609,7 @@ def execute_load(dsn, payload, batch_size):
         "referencias_count": referencias_count,
         "links_count": links_count,
         "distribuidoras_count": distribuidoras_count,
+        **stats,
     }
 
 
@@ -529,13 +675,21 @@ def main():
         f"- Links Vaperalia matched_both sin resolver en CSV preparado: {report['unresolvedVaperaliaLinks']}",
     ]
     if report.get("dbResult"):
+        db_result = report["dbResult"]
         lines += [
             "",
             "## DB result",
             "",
-            f"- referencias en tabla: {report['dbResult']['referencias_count']}",
-            f"- referencia_distribuidora_links en tabla: {report['dbResult']['links_count']}",
-            f"- distribuidoras en tabla: {report['dbResult']['distribuidoras_count']}",
+            f"- referencias en tabla: {db_result['referencias_count']}",
+            f"- referencia_distribuidora_links en tabla: {db_result['links_count']}",
+            f"- distribuidoras en tabla: {db_result['distribuidoras_count']}",
+            f"- referencias upsert ejecutadas: {db_result['references_upserted']}",
+            f"- links upsert ejecutados: {db_result['links_upserted']}",
+            f"- referencias nuevas generadas: {db_result['new_reference_ids']}",
+            f"- referencias existentes reutilizadas desde links: {db_result['existing_reference_ids_reused']}",
+            f"- links existentes resueltos por URL+variante: {db_result['legacy_url_links_resolved']}",
+            f"- SKUs renombrados por conflicto contra BDD existente: {db_result['existing_skus_renamed']}",
+            f"- EAN13 dejados a NULL por conflicto contra BDD existente: {db_result['existing_eans_set_null']}",
         ]
     (RUN_DIR / "sql-loader-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False, indent=2, default=str))
