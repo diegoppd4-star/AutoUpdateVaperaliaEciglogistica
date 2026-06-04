@@ -13,6 +13,7 @@ import { Connector } from "./connectors/connector.js";
 import {
   CardExtractionDiagnostic,
   DiscoveredUrl,
+  KnownProductSeed,
   ListingFailure,
   Product,
 } from "./types.js";
@@ -47,6 +48,10 @@ program
     "--categories <ids>",
     "Comma-separated category ids. Prefix with connector for multi-distributor runs, e.g. vaperalia:liquidos-4,eciglogistica:pod-systems"
   )
+  .option(
+    "--known-urls <path>",
+    "Optional JSON array of known product URLs/products to backfill after category crawl"
+  )
   .action(async (opts) => {
     const limit = parseInt(opts.limit);
     const debug = opts.debug as boolean;
@@ -55,6 +60,7 @@ program
     const outputDir = opts.outputDir as string;
     const debugDir = opts.debugDir as string;
     const categorySelections = parseCategorySelections(opts.categories);
+    const knownProducts = loadKnownProducts(opts.knownUrls);
 
     const connectors: Connector[] = [];
     if (connectorName === "all" || connectorName === "vaperalia") {
@@ -136,6 +142,7 @@ program
             debugDir,
             concurrency,
             categoryIds,
+            knownProducts: knownProductsForConnector(connector, knownProducts),
             onSave: (products) => {
               const currentProducts = [
                 ...preservedProducts,
@@ -227,6 +234,63 @@ function loadPreservedProducts(
     }
     return [];
   }
+}
+
+function loadKnownProducts(jsonPath: string | undefined): KnownProductSeed[] {
+  if (!jsonPath) return [];
+  try {
+    const raw = readFileSync(jsonPath, "utf-8");
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      console.warn(`[Known URLs] ${jsonPath} is not an array; ignoring backfill source`);
+      return [];
+    }
+
+    const out: KnownProductSeed[] = [];
+    for (const item of parsed) {
+      if (typeof item === "string" && item.trim()) {
+        out.push({ url: item.trim() });
+        continue;
+      }
+      if (!item || typeof item !== "object") continue;
+      const value = item as Partial<Product>;
+      if (typeof value.url !== "string" || !value.url.trim()) continue;
+      out.push({
+        distributor: typeof value.distributor === "string" ? value.distributor : undefined,
+        name: typeof value.name === "string" ? value.name : undefined,
+        url: value.url.trim(),
+        categoryId: typeof value.categoryId === "string" ? value.categoryId : undefined,
+        category: typeof value.category === "string" ? value.category : undefined,
+        categoryUrl: typeof value.categoryUrl === "string" ? value.categoryUrl : undefined,
+      });
+    }
+
+    console.log(`[Known URLs] Loaded ${out.length} known URL seeds from ${jsonPath}`);
+    return out;
+  } catch (err) {
+    console.warn(
+      `[Known URLs] Could not read ${jsonPath}: ${err instanceof Error ? err.message : err}`
+    );
+    return [];
+  }
+}
+
+function knownProductsForConnector(
+  connector: Connector,
+  knownProducts: KnownProductSeed[]
+): KnownProductSeed[] | undefined {
+  if (knownProducts.length === 0) return undefined;
+  const connectorName = connector.name.toLowerCase();
+  const base = connector.baseUrl.replace(/\/$/, "").toLowerCase();
+  const filtered = knownProducts.filter((product) => {
+    const distributor = product.distributor?.toLowerCase();
+    if (distributor) return distributor === connectorName;
+    return product.url.toLowerCase().startsWith(base);
+  });
+  if (filtered.length > 0) {
+    console.log(`[Known URLs] ${connector.name}: ${filtered.length} candidate URLs available for backfill`);
+  }
+  return filtered.length > 0 ? filtered : undefined;
 }
 
 function isProduct(value: unknown): value is Product {

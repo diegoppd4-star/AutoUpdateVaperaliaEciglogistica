@@ -25,6 +25,7 @@ const scraperConnector = args.scraperConnector || args["scraper-connector"] || "
 const scraperLimit = Number(args.scraperLimit || args["scraper-limit"] || 0);
 const scraperConcurrency = Number(args.scraperConcurrency || args["scraper-concurrency"] || 5);
 const scraperCategories = args.scraperCategories || args["scraper-categories"] || "";
+const scraperKnownUrls = args.scraperKnownUrls || args["scraper-known-urls"] || "";
 const scraperDebug = Boolean(args.scraperDebug || args["scraper-debug"]);
 const skipScraperInstall = Boolean(args.skipScraperInstall || args["skip-scraper-install"]);
 const skipPlaywrightInstall = Boolean(args.skipPlaywrightInstall || args["skip-playwright-install"]);
@@ -35,6 +36,7 @@ const onlyBuildMaster = Boolean(args.onlyBuildMaster || args["only-build-master"
 const onlyLoadBdd = Boolean(args.onlyLoadBdd || args["only-load-bdd"]);
 const loadBddDryRun = Boolean(args.loadBddDryRun || args["load-bdd-dry-run"]);
 const skipEanEnrichment = Boolean(args.skipEanEnrichment || args["skip-ean-enrichment"]);
+const eanCsv = args.eanCsv || args["ean-csv"] || process.env.EAN_CSV || "";
 const dryRun = Boolean(args.dryRun || args["dry-run"]);
 const codexBatchSize = Number(args.codexBatchSize || args["codex-batch-size"] || 20);
 const codexModel = args.codexModel || args["codex-model"] || "";
@@ -180,6 +182,9 @@ function runBundledScraper(targetScrapeJson) {
   console.log(`Limit: ${scraperLimit}`);
   console.log(`Concurrency: ${scraperConcurrency}`);
   console.log(`Scraper output: ${scraperOutputDir}`);
+  if (scraperKnownUrls) {
+    console.log(`Known URLs backfill: ${path.resolve(scraperKnownUrls)}`);
+  }
 
   if (!skipScraperInstall && !fs.existsSync(path.join(scraperRoot, "node_modules"))) {
     runCommand(npmCommand(), ["ci"], { cwd: scraperRoot });
@@ -199,6 +204,7 @@ function runBundledScraper(targetScrapeJson) {
   ];
   if (scraperLimit > 0) scraperArgs.push("--limit", String(scraperLimit));
   if (scraperCategories) scraperArgs.push("--categories", scraperCategories);
+  if (scraperKnownUrls) scraperArgs.push("--known-urls", path.resolve(scraperKnownUrls));
   if (scraperDebug) scraperArgs.push("--debug", "--debug-dir", scraperDebugDir);
 
   runCommand(process.execPath, scraperArgs, { cwd: scraperRoot });
@@ -333,6 +339,17 @@ function runLoadBdd(workDir) {
 
   fs.rmSync(loaderRoot, { recursive: true, force: true });
   fs.cpSync(loaderSourceRoot, loaderRoot, { recursive: true });
+  if (eanCsv && !skipEanEnrichment) {
+    const resolvedEanCsv = path.resolve(eanCsv);
+    if (!fs.existsSync(resolvedEanCsv)) {
+      throw new Error(`No existe EAN CSV: ${resolvedEanCsv}`);
+    }
+    fs.copyFileSync(
+      resolvedEanCsv,
+      path.join(loaderRoot, "Productos_cliente_Diego_Poole_Prieto.csv")
+    );
+    console.log(`EAN CSV: ${resolvedEanCsv}`);
+  }
   fs.rmSync(inputMaster, { recursive: true, force: true });
   fs.mkdirSync(inputPrepared, { recursive: true });
   fs.copyFileSync(path.join(masterDir, "master_matched_both.json"), path.join(inputMaster, "master_matched_both.json"));
@@ -467,6 +484,7 @@ Flags del scraper integrado:
   --scraper-limit <n>              Limite de productos. Default: 0.
   --scraper-concurrency <n>        Concurrencia. Default: 5.
   --scraper-categories <csv>       Categorias concretas.
+  --scraper-known-urls <json>      JSON de URLs/productos conocidos para backfill.
   --scraper-debug                  Guarda debug del scraper.
   --skip-scraper-install           Salta npm ci si ya esta preparado.
   --skip-playwright-install        Salta instalacion/verificacion Chromium.
@@ -483,6 +501,7 @@ CodexExec:
 BDD:
   --load-bdd                       Carga BDD al final, despues de master JSON.
   --load-bdd-dry-run               Prepara payload/reporte sin insertar.
+  --ean-csv <path>                 CSV articulo/EAN13 para enriquecimiento del loader.
   --skip-ean-enrichment            Salta enriquecimiento EAN13 del loader.
   --bdd-batch-size <n>             Batch size loader. Default: 1000.
   --only-build-master              Solo genera master JSON desde una run existente.

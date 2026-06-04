@@ -1,7 +1,7 @@
 import { BrowserContext, Page } from "playwright";
 import { load } from "cheerio";
 import { Connector, CategorySeed, CategoryResult } from "./connectors/connector.js";
-import { Product, CrawlResult, DiscoveredUrl, ListingFailure, CardExtractionDiagnostic } from "./types.js";
+import { Product, CrawlResult, DiscoveredUrl, ListingFailure, CardExtractionDiagnostic, KnownProductSeed } from "./types.js";
 import { canonicalizeUrl } from "./url-utils.js";
 import { buildSyntheticReference } from "./sku-builder.js";
 
@@ -14,12 +14,14 @@ export interface CrawlOptions {
   debugDir: string;
   concurrency: number;
   categoryIds?: string[];
+  knownProducts?: KnownProductSeed[];
   onSave?: (products: Product[]) => void;
 }
 
 const DELAY_MS = 1000;
 const PHASE2_DELAY_MS = 300;
 const MAX_RETRIES = 3;
+const FETCH_MAX_RETRIES = 6;
 const MAX_PAGES_PER_CATEGORY = 100;
 const SAVE_INTERVAL = 200;
 const LOG_INTERVAL = 50;
@@ -45,6 +47,7 @@ export async function crawl(
   const listingFailures: ListingFailure[] = [];
   const cardExtractionErrors: CardExtractionDiagnostic[] = [];
   const pendingListingRetries: PendingListingRetry[] = [];
+  let knownUrlBackfills = 0;
 
   const inlineMode = connector.enrichInline === true;
   const inlineProducts: Product[] = [];
@@ -318,13 +321,62 @@ export async function crawl(
         if (currentUrl) await delay(DELAY_MS);
       }
     }
+
+    const finalListingFailures = listingFailures.filter((failure) => failure.final);
+    if (connector.failOnListingFailures && finalListingFailures.length > 0) {
+      throw new Error(
+        `[${connector.name}] Critical listing failures: ${finalListingFailures.length}. Refusing to return partial scrape.`
+      );
+    }
   } finally {
     if (detailPage) await detailPage.close();
     await listingPage.close();
   }
 
+  if (!inlineMode && options.knownProducts?.length) {
+    for (const known of options.knownProducts) {
+      if (!known.url) continue;
+      const canonical = canonicalizeUrl(known.url);
+      const duplicate = seenUrls.has(canonical);
+      discoveredUrls.push({
+        connector: connector.name,
+        categoryId: known.categoryId || "known-url-backfill",
+        category: known.category || "Known URL backfill",
+        categoryUrl: known.categoryUrl || connector.baseUrl,
+        listingPageUrl: "known-url-backfill",
+        productUrl: known.url,
+        productName: known.name || known.url,
+        canonicalUrl: canonical,
+        duplicate,
+        discoveredAt: new Date().toISOString(),
+      });
+      if (duplicate) continue;
+
+      seenUrls.add(canonical);
+      knownUrlBackfills++;
+      products.push({
+        distributor: connector.name,
+        name: known.name || productNameFromUrl(known.url),
+        url: known.url,
+        categoryId: known.categoryId || "known-url-backfill",
+        category: known.category || "Known URL backfill",
+        categoryUrl: known.categoryUrl || connector.baseUrl,
+      });
+    }
+
+    if (knownUrlBackfills > 0) {
+      console.log(
+        `[${connector.name}] Known URL backfill: ${knownUrlBackfills} extra live candidates added after category crawl`
+      );
+    }
+  } else if (inlineMode && options.knownProducts?.length) {
+    console.warn(
+      `[${connector.name}] Known URL backfill skipped because connector uses inline enrichment`
+    );
+  }
+
   console.log(
-    `[${connector.name}] Phase 1 complete: ${products.length} products, ${duplicatesSkipped} duplicates skipped${inlineMode ? `, ${inlineProducts.length} rows after inline expansion` : ""}`
+    `[${connector.name}] Phase 1 complete: ${products.length} products, ${duplicatesSkipped} duplicates skipped${knownUrlBackfills ? `, ${knownUrlBackfills} known-url backfills` : ""}${inlineMode ? `, ${inlineProducts.length} rows after inline expansion` : ""}`
   );
 
   // Skip Phase 2 for inline-enriched connectors
@@ -349,15 +401,20 @@ export async function crawl(
   }
 
   // Phase 2: enrich products with variants (HTTP + Cheerio)
-  const concurrency = Math.min(5, Math.max(1, options.concurrency));
+  const phase2UsesBrowser = connector.phase2FetchMode === "browser";
+  const requestedConcurrency = Math.min(5, Math.max(1, options.concurrency));
+  const connectorConcurrency = connector.phase2Concurrency ?? requestedConcurrency;
+  const concurrency = phase2UsesBrowser ? 1 : Math.min(requestedConcurrency, connectorConcurrency);
   console.log(
-    `[${connector.name}] Phase 2: Enriching ${products.length} products (HTTP+Cheerio, ${concurrency} workers)`
+    `[${connector.name}] Phase 2: Enriching ${products.length} products (${phase2UsesBrowser ? "Browser+Cheerio" : "HTTP+Cheerio"}, ${concurrency} workers)`
   );
 
   let enriched = 0;
   let enrichErrors = 0;
   let lastSaveAt = 0;
   const expandedProducts: Product[] = [];
+  const phase2DelayMs = connector.delayMs ?? PHASE2_DELAY_MS;
+  const phase2Page = phase2UsesBrowser ? await context.newPage() : null;
 
   const queue = products.map((_, i) => i);
 
@@ -366,13 +423,15 @@ export async function crawl(
       const idx = queue.shift()!;
       const product = products[idx];
 
-      await delay(PHASE2_DELAY_MS);
+      await delay(phase2DelayMs);
 
       let rawVariants: Record<string, string[]> = {};
       let variantUrlSegments: Record<string, Record<string, string>> | undefined;
       let variantReferenceValues: Record<string, Record<string, string>> | undefined;
       try {
-        const html = await fetchHtmlWithRetry(product.url);
+        const html = phase2Page
+          ? await fetchHtmlWithBrowserRetry(phase2Page, product.url)
+          : await fetchHtmlWithRetry(product.url, connector.failOnEnrichErrors === true);
         if (html === "NOT_FOUND") {
           console.warn(
             `[${connector.name}] Product not found (404), removing from output: ${product.url}`
@@ -385,6 +444,9 @@ export async function crawl(
           console.warn(
             `[${connector.name}] Enrich failed (fetch): ${product.url}`
           );
+          if (connector.failOnEnrichErrors) {
+            throw new Error(`[${connector.name}] Critical enrich fetch failure: ${product.url}`);
+          }
           // If listing gave a slug as name, derive human-readable name from the URL path
           if (/^[a-z0-9-]+$/.test(product.name)) {
             const seg = product.url.replace(/\/$/, "").split("/").pop() ?? "";
@@ -439,6 +501,9 @@ export async function crawl(
         console.warn(
           `[${connector.name}] Enrich error: ${product.url}: ${err instanceof Error ? err.message : err}`
         );
+        if (connector.failOnEnrichErrors) {
+          throw err;
+        }
         enrichErrors++;
         enriched++;
         expandedProducts.push({ ...product, variants: {} });
@@ -467,11 +532,21 @@ export async function crawl(
   }
 
   const workers = Array.from({ length: concurrency }, () => enrichWorker());
-  await Promise.all(workers);
+  try {
+    await Promise.all(workers);
+  } finally {
+    if (phase2Page) await phase2Page.close();
+  }
 
   // Final save after enrichment
   if (options.onSave) {
     options.onSave(expandedProducts);
+  }
+
+  if (connector.failOnEnrichErrors && enrichErrors > 0) {
+    throw new Error(
+      `[${connector.name}] Critical enrichment failures: ${enrichErrors}. Refusing to return partial scrape.`
+    );
   }
 
   console.log(
@@ -560,7 +635,19 @@ function buildVariantUrl(
 export async function navigateWithRetry(page: Page, url: string): Promise<boolean> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+      const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
+      const status = response?.status() ?? 200;
+      if ((status === 429 || status === 403) && attempt < MAX_RETRIES) {
+        const retryAfter = parseRetryAfterMs(response?.headers()["retry-after"] ?? null);
+        const backoff = retryAfter ?? Math.min(60_000, 10_000 * 2 ** attempt);
+        console.warn(`HTTP ${status} for listing ${url}, retrying in ${backoff}ms...`);
+        await delay(backoff);
+        continue;
+      }
+      if (status >= 400) {
+        console.warn(`HTTP ${status} for listing ${url}`);
+        return false;
+      }
       return true;
     } catch (err) {
       console.warn(
@@ -634,8 +721,11 @@ async function saveDebugHtml(
   }
 }
 
-export async function fetchHtmlWithRetry(url: string): Promise<string | null | "NOT_FOUND"> {
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+export async function fetchHtmlWithRetry(
+  url: string,
+  failFastOnRateLimit = false
+): Promise<string | null | "NOT_FOUND"> {
+  for (let attempt = 0; attempt <= FETCH_MAX_RETRIES; attempt++) {
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -650,8 +740,12 @@ export async function fetchHtmlWithRetry(url: string): Promise<string | null | "
           console.warn(`HTTP 404 for ${url} — product no longer exists`);
           return "NOT_FOUND";
         }
-        if ((res.status === 429 || res.status === 403) && attempt < MAX_RETRIES) {
-          const backoff = 5000 * (attempt + 1);
+        if ((res.status === 429 || res.status === 403) && failFastOnRateLimit) {
+          throw new Error(`RATE_LIMITED_${res.status}: ${url}`);
+        }
+        if ((res.status === 429 || res.status === 403) && attempt < FETCH_MAX_RETRIES) {
+          const retryAfter = parseRetryAfterMs(res.headers.get("retry-after"));
+          const backoff = retryAfter ?? Math.min(120_000, 15_000 * 2 ** attempt);
           console.warn(`HTTP ${res.status} for ${url}, retrying in ${backoff}ms...`);
           await delay(backoff);
           continue;
@@ -661,15 +755,79 @@ export async function fetchHtmlWithRetry(url: string): Promise<string | null | "
       }
       return await res.text();
     } catch (err) {
+      if (
+        failFastOnRateLimit &&
+        err instanceof Error &&
+        err.message.startsWith("RATE_LIMITED_")
+      ) {
+        throw err;
+      }
       console.warn(
         `Fetch attempt ${attempt + 1} failed for ${url}: ${err instanceof Error ? err.message : err}`
       );
-      if (attempt < MAX_RETRIES) {
-        await delay(3000 * (attempt + 1));
+      if (attempt < FETCH_MAX_RETRIES) {
+        await delay(Math.min(60_000, 5000 * 2 ** attempt));
       }
     }
   }
   return null;
+}
+
+async function fetchHtmlWithBrowserRetry(page: Page, url: string): Promise<string | null | "NOT_FOUND"> {
+  for (let attempt = 0; attempt <= FETCH_MAX_RETRIES; attempt++) {
+    try {
+      const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30_000 });
+      const status = response?.status() ?? 200;
+      if (status === 404) {
+        console.warn(`HTTP 404 for ${url} - product no longer exists`);
+        return "NOT_FOUND";
+      }
+      if ((status === 429 || status === 403) && attempt < FETCH_MAX_RETRIES) {
+        const retryAfter = parseRetryAfterMs(response?.headers()["retry-after"] ?? null);
+        const backoff = retryAfter ?? Math.min(120_000, 15_000 * 2 ** attempt);
+        console.warn(`HTTP ${status} for ${url}, retrying in ${backoff}ms...`);
+        await delay(backoff);
+        continue;
+      }
+      if (status >= 400) {
+        console.warn(`HTTP ${status} for ${url}`);
+        return null;
+      }
+      await settlePageBeforeExtraction(page, [
+        "select.select-attribute-product",
+        "select.select-attribute-product option",
+        "p.grey-texts",
+        "#description",
+      ]);
+      return await page.content();
+    } catch (err) {
+      console.warn(
+        `Browser fetch attempt ${attempt + 1} failed for ${url}: ${err instanceof Error ? err.message : err}`
+      );
+      if (attempt < FETCH_MAX_RETRIES) {
+        await delay(Math.min(60_000, 5000 * 2 ** attempt));
+      }
+    }
+  }
+  return null;
+}
+
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.max(5000, seconds * 1000);
+  const dateMs = Date.parse(value);
+  if (!Number.isFinite(dateMs)) return null;
+  return Math.max(5000, dateMs - Date.now());
+}
+
+function productNameFromUrl(url: string): string {
+  const slug = url.replace(/[?#].*$/, "").replace(/\/$/, "").split("/").pop() || url;
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 export function delay(ms: number): Promise<void> {

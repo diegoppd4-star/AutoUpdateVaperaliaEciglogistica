@@ -6,6 +6,7 @@ param(
   [int]$ScraperLimit = 0,
   [int]$ScraperConcurrency = 5,
   [string]$ScraperCategories = "",
+  [string]$ScraperKnownUrls = "",
   [switch]$ScraperDebug,
   [switch]$SkipScraperInstall,
   [switch]$SkipPlaywrightInstall,
@@ -234,6 +235,9 @@ try {
       if ($ScraperCategories) {
         Write-Host "Categories: $ScraperCategories"
       }
+      if ($ScraperKnownUrls) {
+        Write-Host "Known URLs backfill: $ScraperKnownUrls"
+      }
       Write-Host "Scraper output: $scraperOutputDir"
 
       $npm = Resolve-Npm -RepoRoot $root
@@ -264,6 +268,9 @@ try {
       }
       if ($ScraperCategories) {
         $scraperArgs += @("--categories", $ScraperCategories)
+      }
+      if ($ScraperKnownUrls) {
+        $scraperArgs += @("--known-urls", $ScraperKnownUrls)
       }
       if ($ScraperDebug) {
         $scraperArgs += @("--debug", "--debug-dir", $scraperDebugDir)

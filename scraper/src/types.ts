@@ -25,6 +25,15 @@ export interface Product {
   };
 }
 
+export interface KnownProductSeed {
+  distributor?: string;
+  name?: string;
+  url: string;
+  categoryId?: string;
+  category?: string;
+  categoryUrl?: string;
+}
+
 export interface EnrichmentResult {
   variants: Record<string, string[]>;
   variantUrlSegments?: Record<string, Record<string, string>>;

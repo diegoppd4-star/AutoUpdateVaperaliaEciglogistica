@@ -28,8 +28,16 @@ export interface Connector {
   baseUrl: string;
   /** When true, variants are extracted during Phase 1 using a second Playwright tab (same session/cookies). */
   enrichInline?: boolean;
+  /** Phase 2 transport. Browser mode reuses Playwright session/cookies for stricter sites. Defaults to HTTP. */
+  phase2FetchMode?: "http" | "browser";
   /** Override inter-product delay (ms) for inline enrichment. Falls back to crawler's DELAY_MS. */
   delayMs?: number;
+  /** When true, any final category listing failure makes the crawl fail instead of returning partial data. */
+  failOnListingFailures?: boolean;
+  /** When true, any product detail enrichment failure makes the crawl fail instead of returning partial data. */
+  failOnEnrichErrors?: boolean;
+  /** Optional maximum Phase 2 workers for this connector. */
+  phase2Concurrency?: number;
   getCategorySeeds(categoryIds?: string[]): Promise<CategorySeed[]>;
   listProductsFromCategory(
     page: Page,

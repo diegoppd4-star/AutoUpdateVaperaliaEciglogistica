@@ -39,6 +39,7 @@ run_auto_update.mjs
 - `pipeline_sagrado/PIPELINE SAGRADO`: copia autocontenida del Pipeline Sagrado necesario para ejecutar las tres capas.
 - `tools/validate-scrape-contract.js`: validacion previa del JSON de scrapeo.
 - `docs/SCRAPPER_ARCHITECTURE.md`: contrato tecnico del scraper.
+- `docs/SCRAPER_FUSION_BACKFILL.md`: fusion del scraper Vaperalia + Ecig eficiente y uso de backfill de URLs conocidas.
 - `docs/AGENT_HANDOFF_PIPELINE_COMPLETO.md`: contexto completo del pipeline para otro agente/desarrollador.
 - `config.example.json`: ejemplos de uso.
 - `runs/`: carpeta donde se crean ejecuciones nuevas.
@@ -70,6 +71,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\run_auto_update.ps1 `
   -SkipScraperInstall `
   -SkipPlaywrightInstall
 ```
+
+Para refresco completo con rescate de URLs que ya existian en ejecuciones anteriores:
+
+```powershell
+node .\run_auto_update.mjs `
+  --run-name daily-full-refresh `
+  --scraper-known-urls ".\runs\RUN_ANTERIOR\scraper-output\output.json"
+```
+
+Ese backfill no sustituye el crawl de categorias: primero se recorren las categorias vivas y despues se reintentan URLs historicas que no hayan aparecido. Sirve para detectar productos vivos que Eciglogistica o Vaperalia no esten devolviendo desde categorias.
 
 ## Uso con Docker
 
@@ -107,6 +118,27 @@ Con `docker compose`:
 
 ```powershell
 docker compose up --build
+```
+
+Con Docker Compose y backfill de URLs conocidas:
+
+```powershell
+$env:CODEX_HOST_HOME="C:\Users\diego\.codex"
+docker compose run --rm autoupdate `
+  --run-name docker-full-refresh `
+  --scraper-known-urls /app/runs/RUN_ANTERIOR/scraper-output/output.json `
+  --ean-csv /app/runs/local-inputs/Productos_cliente_Diego_Poole_Prieto.csv `
+  --skip-playwright-install `
+  --load-bdd `
+  --load-bdd-dry-run
+```
+
+El CSV de EAN13 no se versiona en Git. Para Docker Compose, dejalo dentro de `runs/local-inputs/` en el host para que el volumen `./runs:/app/runs` lo haga visible dentro del contenedor:
+
+```powershell
+mkdir .\runs\local-inputs -Force
+copy "C:\Users\diego\Desktop\SQLLoader\Productos_cliente_Diego_Poole_Prieto.csv" `
+  ".\runs\local-inputs\Productos_cliente_Diego_Poole_Prieto.csv"
 ```
 
 Para probar sin capa IA:

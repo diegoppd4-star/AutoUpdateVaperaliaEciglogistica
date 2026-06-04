@@ -24,8 +24,12 @@ const CATEGORY_SEEDS: CategorySeed[] = [
 export class EciglogisticaConnector implements Connector {
   name = "Eciglogistica";
   baseUrl = "https://nueva.eciglogistica.com";
-  enrichInline = true;
+  enrichInline = false;
+  phase2FetchMode = "http" as const;
   delayMs = 600;
+  failOnListingFailures = true;
+  failOnEnrichErrors = true;
+  phase2Concurrency = 1;
 
   async getCategorySeeds(categoryIds?: string[]): Promise<CategorySeed[]> {
     if (!categoryIds || categoryIds.length === 0) return CATEGORY_SEEDS;
