@@ -34,6 +34,8 @@ export interface Connector {
   delayMs?: number;
   /** When true, any final category listing failure makes the crawl fail instead of returning partial data. */
   failOnListingFailures?: boolean;
+  /** Accept a 404 from a next-page link as the end of pagination. Seed-page 404s remain failures. */
+  linkedPaginationNotFoundEndsCategory?: boolean;
   /** When true, any product detail enrichment failure makes the crawl fail instead of returning partial data. */
   failOnEnrichErrors?: boolean;
   /** Optional maximum Phase 2 workers for this connector. */

@@ -1,13 +1,35 @@
 services:
   autoupdate:
     build: .
+    image: autoupdatedockergit-autoupdate
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     environment:
       DATABASE_URL: ${DATABASE_URL:-}
       CODEX_HOME: /codex-home
       CODEX_EXEC_PATH: codex
     volumes:
-      - ./runs:/app/runs
-      - ${CODEX_HOST_HOME:-/var/home/pedro/.codex}:/codex-home:ro
+      - ./runs:/app/runs:Z
+      - codex-home:/codex-home:ro
     command:
       - --run-name
       - docker-full-refresh
+
+  codex-bootstrap:
+    image: autoupdatedockergit-autoupdate
+    user: "0:0"
+    profiles:
+      - tools
+    volumes:
+      - codex-home:/codex-home
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >-
+        rm -f /codex-home/auth.json /codex-home/config.toml
+        /codex-home/installation_id /codex-home/models_cache.json
+        /codex-home/version.json;
+        exec tar -C /codex-home --same-owner -xf -
+
+volumes:
+  codex-home:
+    name: autoupdatedockergit-codex-home

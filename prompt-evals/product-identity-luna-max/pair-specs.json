@@ -1,0 +1,194 @@
+{
+  "version": 1,
+  "scrape": "runs/20260825-120517-matching-from-complete-scrape/input/scrape.json",
+  "reviewedAt": "2026-08-25T16:50:00+02:00",
+  "reviewMethod": "Sol high: exact live product pages inspected with Playwright and cross-checked against the immutable scrape used by the matching run.",
+  "pairs": [
+    {
+      "id": "conflict-01-leviathan-v2-green",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Leviathan V2 Green Edition (reference AL-A-LEVIATHAN.V2.GREEN-30ml); Eciglogistica is the non-Green Leviathan V2. Green Edition is an identity-bearing recipe edition.",
+      "a": { "url": "https://vaperalia.es/al/aroma-ultimate-leviathan-v2-al-4135.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-amp-l-ultimate-leviathan-v2-aroma-30ml" }
+    },
+    {
+      "id": "conflict-02-phoenix-green",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Phoenix Green Edition (reference AL-A-PHOENIX.GREEN-30ml); Eciglogistica is Phoenix without that edition. The edition is identity-bearing.",
+      "a": { "url": "https://vaperalia.es/al/aroma-ultimate-phoenix-al-5902.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-phoenix-aroma-30ml" }
+    },
+    {
+      "id": "conflict-03-shinigami-green",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Shinigami Green Edition (reference AL-A-SHINIGAMI.GREEN-30ml); Eciglogistica is the non-Green recipe.",
+      "a": { "url": "https://vaperalia.es/al/aroma-ultimate-shinigami-al-5119.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-shinigami-aroma-30ml" }
+    },
+    {
+      "id": "conflict-04-shinigami-zero-green",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Shinigami Zero Green Edition; Eciglogistica is non-Green Shinigami Zero. A coincident-looking supplier code does not override an identity-bearing edition.",
+      "a": { "url": "https://vaperalia.es/al/aroma-shinigami-ultimate-zero-al-6375.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-shinigami-zero-aroma-30ml" }
+    },
+    {
+      "id": "conflict-05-valkyrie-green",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Valkyrie Green Edition (reference AL-A-VALKIRYE.GREEN); Eciglogistica's exact page is non-Green Valkyrie.",
+      "a": { "url": "https://vaperalia.es/al/aroma-ultimate-valkyrie-al-5120.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-valkyrie-aroma-30ml" }
+    },
+    {
+      "id": "conflict-06-ivg-neon-lime-20mg",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both selected scrape rows are IVG/IVG Salt Neon Lime, 10 ml, 20 mg, 50VG/50PG, with the same flavour. The Eciglogistica URL groups 10 mg and 20 mg; its selected 20 mg row is the comparison unit.",
+      "a": { "url": "https://vaperalia.es/ivg-salt/neon-lime-ivg-salt-8192.html#/85-nicotina-20_mg/43-capacidad_bote-10_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/ivg-salts-neon-lime-10ml", "variants": { "MG": "20mg" } }
+    },
+    {
+      "id": "conflict-07-ivg-paradise-lagoon-20mg",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both selected scrape rows are IVG/IVG Salt Paradise Lagoon, 10 ml, 20 mg, 50VG/50PG, with the same pineapple/papaya/citrus profile. The grouped supplier page is resolved to its 20 mg row.",
+      "a": { "url": "https://vaperalia.es/ivg-salt/paradise-lagoon-10ml-ivg-salt-9673.html#/85-nicotina-20_mg/43-capacidad_bote-10_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/ivg-salts-paradise-lagoon-10ml", "variants": { "MG": "20mg" } }
+    },
+    {
+      "id": "conflict-08-ursa-nano-vs-s3",
+      "set": "conflict",
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is the original Ursa Nano: 800 mAh and 5-18 W. Eciglogistica is Ursa Nano S3: 1600 mAh and 11-30 W. S3 is a different model/generation, not a wording variation.",
+      "a": { "url": "https://vaperalia.es/lost-vape/ursa-nano-800mah-lost-vape-12439.html#/785-color-silver_carbon_fiber" },
+      "b": { "url": "https://nueva.eciglogistica.com/lost-vape-ursa-nano-s3-pod-kit", "variants": { "COLOR": "Silver Silk" } }
+    },
+    {
+      "id": "conflict-09-ursa-v3-pod-08",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both are Lost Vape Ursa V3 replacement pods, pack 3, 2 ml, selected at 0.8 ohm. The copy says lateral-upper fill versus top-fill, but no distinct model or edition is shown and all identity-bearing dimensions coincide.",
+      "a": { "url": "https://vaperalia.es/lost-vape/pod-ursa-2ml-3pcs-lost-vape-12425.html#/288-ohmios-0_8_ohm/118-capacidad_del_tanque-2_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/lost-vape-ursa-v3-replacement-pod-pack-3", "variants": { "OHM": "0.8OHM" } }
+    },
+    {
+      "id": "conflict-10-ursa-v3-pod-10",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both are Lost Vape Ursa V3 replacement pods, pack 3, 2 ml, selected at 1.0 ohm. The fill-location wording conflict is catalog copy, not evidence of a second named model.",
+      "a": { "url": "https://vaperalia.es/lost-vape/pod-ursa-2ml-3pcs-lost-vape-12425.html#/112-ohmios-1_0_ohm/118-capacidad_del_tanque-2_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/lost-vape-ursa-v3-replacement-pod-pack-3", "variants": { "OHM": "1.0OHM" } }
+    },
+    {
+      "id": "conflict-11-xros-corex2-pod-08",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both are Vaporesso Xros Series Corex 2.0 replacement pods, pack 4, 2 ml, selected at 0.8 ohm, with the same compatibility and technology.",
+      "a": { "url": "https://vaperalia.es/vaporesso/pod-xros-series-corex-20-2ml-4pcs-vaporesso-13574.html#/288-ohmios-0_8_ohm/118-capacidad_del_tanque-2_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-xros-series-pod-replacement-corex-2-0-pack-4", "variants": { "OHM": "0.8 Ohm" } }
+    },
+    {
+      "id": "conflict-12-xros-corex2-pod-12",
+      "set": "conflict",
+      "truth": "SAME",
+      "truthBasis": "Both are Vaporesso Xros Series Corex 2.0 replacement pods, pack 4, 2 ml, selected at 1.2 ohm, with the same compatibility and technology.",
+      "a": { "url": "https://vaperalia.es/vaporesso/pod-xros-series-corex-20-2ml-4pcs-vaporesso-13574.html#/114-ohmios-1_2_ohm/118-capacidad_del_tanque-2_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-xros-series-pod-replacement-corex-2-0-pack-4", "variants": { "OHM": "1.2 Ohm" } }
+    },
+    {
+      "id": "control-01-succube-v2-sweet",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same A&L Ultimate Succube V2 Sweet Edition aroma, 30 ml. The Vaperalia title and technical reference say Sweet Edition; one sentence incorrectly says Green Edition and is treated as an isolated copy error.",
+      "a": { "url": "https://vaperalia.es/al/aroma-ultimate-succube-al-5003.html#/45-capacidad_bote-30_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-succube-v2-sweet-edition-aroma-30ml" }
+    },
+    {
+      "id": "control-02-delirio-longfill",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Alquimia Para Vapers Delirio Longfill: 20 ml aroma in a 120 ml bottle and the same distinctive flavour profile.",
+      "a": { "url": "https://vaperalia.es/alquimia-para-vapers/aroma-delirio-20ml120-longfill-alquimia-para-vapers-14728.html#/1592-capacidad_bote-20ml_en_bote_de_120ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/alquimia-para-vapers-delirio-longfill-20ml" }
+    },
+    {
+      "id": "control-03-apple-sours-longfill",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Dinner Lady Apple Sours Longfill: 14 ml aroma in a 60 ml bottle, same product and flavour.",
+      "a": { "url": "https://vaperalia.es/dinner-lady/aroma-apple-sours-14ml60-longfill-dinner-lady-15149.html#/1680-capacidad_bote-14ml_en_bote_de_60ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/dinner-lady-apple-sours-longfill-14ml" }
+    },
+    {
+      "id": "control-04-caliburn-g-coil-08",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Uwell Caliburn G coil, pack 4, selected at 0.8 ohm, with matching device compatibility.",
+      "a": { "url": "https://vaperalia.es/uwell/resistencia-caliburn-g-coil-4pcs-uwell-9034.html#/288-ohmios-0_8_ohm" },
+      "b": { "url": "https://nueva.eciglogistica.com/uwell-caliburn-g-coil-pack-4", "variants": { "RESISTENCIA": "0.8ohm" } }
+    },
+    {
+      "id": "control-05-crown-x-coil-03",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Uwell Crown X coil, pack 4, selected at 0.3 ohm.",
+      "a": { "url": "https://vaperalia.es/uwell/resistencia-crown-x-4pcs-uwell-13048.html#/287-ohmios-0_3_ohm" },
+      "b": { "url": "https://nueva.eciglogistica.com/uwell-crown-x-coil-pack-4", "variants": { "RESISTENCIA": "0.3OHM" } }
+    },
+    {
+      "id": "control-06-gti-dual-mesh-02",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso GTi Dual Mesh coil, pack 5, selected at 0.2 ohm.",
+      "a": { "url": "https://vaperalia.es/vaporesso/resistencia-gti-dual-mesh-5pcs-vaporesso-15234.html#/291-ohmios-0_2_ohm" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-gti-dual-mesh-coil-pack-5", "variants": { "RESISTENCIA": "0.2ohm" } }
+    },
+    {
+      "id": "control-07-itank2-glass-8ml",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso iTank 2 replacement glass, selected at 8 ml. The Eciglogistica page groups 2 ml and 8 ml; the selected scrape row is 8 ml.",
+      "a": { "url": "https://vaperalia.es/depositos-de-pyrex-y-acero/deposito-de-pyrex-para-itank-2-8ml-vaporesso-13340.html#/1061-capacidad_del_tanque-8_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-itank-2-glass", "variants": { "ML": "8ml" } }
+    },
+    {
+      "id": "control-08-itank-t-dual-mesh-silver",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso iTank T Dual Mesh, 2 ml, selected in silver. The supplier title omits Dual Mesh but its page explicitly states that technology.",
+      "a": { "url": "https://vaperalia.es/vaporesso/itank-t-dual-mesh-2ml-vaporesso-15233.html#/432-color-silver" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-itank-t-2ml-dual-mesh", "variants": { "COLOR": "SILVER" } }
+    },
+    {
+      "id": "control-09-luxe-x-corex2-pod-03",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso Luxe X Series Corex 2.0 pod, pack 2, 2 ml, selected at 0.3 ohm.",
+      "a": { "url": "https://vaperalia.es/vaporesso/pod-luxe-x-series-corex-20-2ml-2pcs-vaporesso-13287.html#/287-ohmios-0_3_ohm/118-capacidad_del_tanque-2_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/vaporesso-luxe-x-replacement-pod-2ml-corex-2.0-pack-2", "variants": { "RESISTENCIA": "0.3ohm Corex 2.0" } }
+    },
+    {
+      "id": "control-10-tormento-aroma-10ml",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": { "match": 1, "base": 1, "variant": 1 },
+      "truth": "SAME",
+      "truthBasis": "Same Alquimia Para Vapers Tormento concentrated aroma, 10 ml, with the same distinctive tobacco/vanilla/cream/nuts/coconut/chocolate profile.",
+      "a": { "url": "https://vaperalia.es/alquimia-para-vapers/aroma-tormento-10ml-alquimia-para-vapers-14725.html#/43-capacidad_bote-10_ml" },
+      "b": { "url": "https://nueva.eciglogistica.com/alquimia-para-vapers-aroma-tormento-10ml" }
+    }
+  ]
+}

@@ -120,6 +120,31 @@ Con `docker compose`:
 docker compose up --build
 ```
 
+Compose monta `./runs` directamente en `/app/runs` con la etiqueta SELinux
+privada necesaria en Bazzite (`:Z`). Logs y artefactos quedan visibles en el
+repositorio aunque el contenedor se elimine con `docker compose run --rm`.
+
+En Linux, una ejecucion completa con carga BDD:
+
+```bash
+export DATABASE_URL='postgresql://...'
+export LOCAL_UID="$(id -u)"
+export LOCAL_GID="$(id -g)"
+sudo docker compose build
+./docker-import-codex.sh
+sudo --preserve-env=DATABASE_URL,LOCAL_UID,LOCAL_GID docker compose run --rm \
+  autoupdate \
+  --run-name full-db-refresh \
+  --load-bdd
+```
+
+Cada ejecucion guarda automaticamente toda su salida de consola en
+`runs/logs/<timestamp>-<pid>.log` y sus artefactos en `runs/<run>/`.
+Solo `auth.json` se copia al volumen privado `autoupdatedockergit-codex-home`;
+`~/.codex` no se monta dentro del contenedor.
+El `config.toml` interactivo del host no se importa, porque puede contener modelos
+u opciones incompatibles con la version de Codex CLI fijada en la imagen.
+
 Con Docker Compose y backfill de URLs conocidas:
 
 ```powershell
@@ -133,13 +158,8 @@ docker compose run --rm autoupdate `
   --load-bdd-dry-run
 ```
 
-El CSV de EAN13 no se versiona en Git. Para Docker Compose, dejalo dentro de `runs/local-inputs/` en el host para que el volumen `./runs:/app/runs` lo haga visible dentro del contenedor:
-
-```powershell
-mkdir .\runs\local-inputs -Force
-copy "C:\Users\diego\Desktop\SQLLoader\Productos_cliente_Diego_Poole_Prieto.csv" `
-  ".\runs\local-inputs\Productos_cliente_Diego_Poole_Prieto.csv"
-```
+El CSV de EAN13 no se versiona en Git. Cuando se use Docker Compose, debe
+copiarse al volumen persistente o indicarse mediante una montura adicional.
 
 Para probar sin capa IA:
 
@@ -245,6 +265,32 @@ Para generar solo master desde una run existente:
 docker compose run --rm autoupdate --only-build-master --from-run 20260601-222111-docker-full-refresh
 ```
 
+Para reanudar CodexExec sin repetir scraper ni matching determinista:
+
+```bash
+docker compose run --rm autoupdate \
+  --resume-codex-exec \
+  --from-run 20260601-222111-docker-full-refresh \
+  --codex-model gpt-5.6-luna \
+  --codex-reasoning-effort max
+```
+
+Si no se indican esos dos flags, la pipeline usa automáticamente la combinación calibrada
+`gpt-5.6-luna` con razonamiento `max`, además de `prompt-evals/product-identity-luna-max/PROMPT_WINNER.txt`.
+Cada ejecución completa genera también:
+
+- `outputs/audits/product-conflicts.json`: representación estructurada de todos los conflictos.
+- `outputs/audits/product-conflicts.md`: resumen para comprobación humana con nombres, motivo, resolución y URLs de ambos proveedores.
+
+El informe reúne rechazos del matching IA, conflictos uno-a-varios y conflictos o reparaciones del loader. Los productos simplemente no emparejados no se consideran conflictos.
+
+CodexExec guarda cada lote validado en
+`pipeline-work/outputs/reviews/codexexec-batches/`. Una reanudacion reutiliza
+solamente checkpoints cuyo hash coincide con el prompt, esquema, modelo y
+candidatos actuales. Si un lote falla, deja junto a ellos un
+`batch-NNN.failure.json` saneado con el diagnostico del proceso. Este modo no
+carga Neon salvo que se anada explicitamente `--load-bdd`.
+
 Para cargar BDD desde una run existente sin repetir scraper, matching ni CodexExec:
 
 ```bash
@@ -278,6 +324,8 @@ Dentro:
 - `pipeline-work/outputs/general.matches.valid.json`
 - `pipeline-work/outputs/description-rescue-candidates.matches.valid.json`
 - `pipeline-work/outputs/reviews/description-rescue-decisions.json`
+- `pipeline-work/outputs/reviews/codexexec-batches/batch-NNN.json`
+- `pipeline-work/outputs/reviews/codexexec-batches/batch-NNN.failure.json` cuando falla un lote
 - `pipeline-work/outputs/reviewed-rescues.matches.valid.json`
 - `pipeline-work/outputs/audits/reviewed-rescues.audit.md`
 - `pipeline-work/outputs/master-json/master_matched_both.json`
@@ -307,3 +355,4 @@ Si no hay certeza suficiente para aceptar, se rechaza con motivo.
 - `--skip-ean-enrichment`: carga sin enriquecer EAN13.
 - `--only-build-master --from-run <run|path>`: solo Pipeline 5 desde una run existente.
 - `--only-load-bdd --from-run <run|path>`: solo Pipeline 6 desde una run existente; si falta master, lo genera antes.
+- `--resume-codex-exec --from-run <run|path>`: reanuda Pipeline 3 desde sus checkpoints y continua con master JSON; no toca BDD sin `--load-bdd`.

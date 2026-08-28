@@ -1,7 +1,7 @@
 import { BrowserContext, Page } from "playwright";
 import { load } from "cheerio";
 import { Connector, CategorySeed, CategoryResult } from "./connectors/connector.js";
-import { Product, CrawlResult, DiscoveredUrl, ListingFailure, CardExtractionDiagnostic, KnownProductSeed } from "./types.js";
+import { Product, CrawlResult, DiscoveredUrl, ListingFailure, CardExtractionDiagnostic, KnownProductSeed, VariantSourceReference } from "./types.js";
 import { canonicalizeUrl } from "./url-utils.js";
 import { buildSyntheticReference } from "./sku-builder.js";
 
@@ -62,14 +62,28 @@ export async function crawl(
     seedUrl: string,
     listingPageUrl: string,
     phase: "initial" | "retry"
-  ): Promise<{ ok: boolean; nextPageUrl: string | null; reason?: string }> {
+  ): Promise<{ ok: boolean; nextPageUrl: string | null; reason?: string; terminal?: boolean }> {
     console.log(
       `[${connector.name}] Fetching${phase === "retry" ? " retry" : ""}: ${listingPageUrl} (${products.length} products so far)`
     );
 
-    const success = await navigateWithRetry(listingPage, listingPageUrl);
-    if (!success) {
-      return { ok: false, nextPageUrl: null, reason: "navigation_failed_after_retries" };
+    const navigation = await navigateWithRetryResult(listingPage, listingPageUrl);
+    if (!navigation.ok) {
+      const linkedPaginationNotFound =
+        phase === "initial" &&
+        listingPageUrl !== seedUrl &&
+        navigation.status === 404 &&
+        connector.linkedPaginationNotFoundEndsCategory === true;
+      if (linkedPaginationNotFound) {
+        console.warn(
+          `[${connector.name}] Linked pagination page returned 404; treating as end of category: ${listingPageUrl}`
+        );
+        return { ok: true, nextPageUrl: null, terminal: true };
+      }
+      const reason = navigation.status
+        ? `http_${navigation.status}`
+        : "navigation_failed_after_retries";
+      return { ok: false, nextPageUrl: null, reason };
     }
 
     if (inlineMode) {
@@ -194,7 +208,8 @@ export async function crawl(
               product,
               rawVariants,
               enrichment.variantUrlSegments,
-              enrichment.variantReferenceValues
+              enrichment.variantReferenceValues,
+              enrichment.variantSourceReferences
             );
             inlineProducts.push(...expanded);
           } else {
@@ -264,6 +279,7 @@ export async function crawl(
             );
             break;
           }
+          if (result.terminal) break;
 
           categoryPageCount++;
 
@@ -428,6 +444,7 @@ export async function crawl(
       let rawVariants: Record<string, string[]> = {};
       let variantUrlSegments: Record<string, Record<string, string>> | undefined;
       let variantReferenceValues: Record<string, Record<string, string>> | undefined;
+      let variantSourceReferences: VariantSourceReference[] | undefined;
       try {
         const html = phase2Page
           ? await fetchHtmlWithBrowserRetry(phase2Page, product.url)
@@ -481,6 +498,7 @@ export async function crawl(
         rawVariants = enrichment.variants;
         variantUrlSegments = enrichment.variantUrlSegments;
         variantReferenceValues = enrichment.variantReferenceValues;
+        variantSourceReferences = enrichment.variantSourceReferences;
         if (enrichment.fullName) product.name = enrichment.fullName;
         if (enrichment.brand != null) product.brand = enrichment.brand;
         if (enrichment.brandCandidates != null) product.brandCandidates = enrichment.brandCandidates;
@@ -514,7 +532,8 @@ export async function crawl(
         product,
         rawVariants,
         variantUrlSegments,
-        variantReferenceValues
+        variantReferenceValues,
+        variantSourceReferences
       );
       expandedProducts.push(...expanded);
 
@@ -568,7 +587,8 @@ export function expandVariants(
   product: Product,
   rawVariants: Record<string, string[]>,
   variantUrlSegments?: Record<string, Record<string, string>>,
-  variantReferenceValues?: Record<string, Record<string, string>>
+  variantReferenceValues?: Record<string, Record<string, string>>,
+  variantSourceReferences?: VariantSourceReference[]
 ): Product[] {
   const dimensions = Object.entries(rawVariants).filter(
     ([, values]) => values.length > 0
@@ -594,14 +614,39 @@ export function expandVariants(
     const suffix = Object.values(combo).join(" / ");
     const url = buildVariantUrl(product.url, combo, variantUrlSegments);
     const derivedColor = buildDerivedColor(combo, variantReferenceValues);
+    const sourceReference = findVariantSourceReference(combo, variantSourceReferences);
     return {
       ...product,
       name: `${product.name} - ${suffix}`,
       url,
       variants: combo,
+      ...(variantSourceReferences !== undefined ? { reference: sourceReference ?? undefined } : {}),
       ...(derivedColor ? { derived: { ...product.derived, matchedReferenceColor: derivedColor } } : {}),
     };
   });
+}
+
+function findVariantSourceReference(
+  combo: Record<string, string>,
+  variantSourceReferences?: VariantSourceReference[]
+): string | null {
+  if (!variantSourceReferences) return null;
+  const wanted = variantCombinationKey(Object.values(combo));
+  return variantSourceReferences.find(
+    (entry) => variantCombinationKey(entry.attributeValues) === wanted
+  )?.sourceReference ?? null;
+}
+
+function variantCombinationKey(values: string[]): string {
+  return values
+    .map((value) => value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim())
+    .filter(Boolean)
+    .sort()
+    .join("\u001f");
 }
 
 function buildDerivedColor(
@@ -633,6 +678,15 @@ function buildVariantUrl(
 }
 
 export async function navigateWithRetry(page: Page, url: string): Promise<boolean> {
+  return (await navigateWithRetryResult(page, url)).ok;
+}
+
+interface NavigationResult {
+  ok: boolean;
+  status?: number;
+}
+
+async function navigateWithRetryResult(page: Page, url: string): Promise<NavigationResult> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 30000 });
@@ -646,9 +700,9 @@ export async function navigateWithRetry(page: Page, url: string): Promise<boolea
       }
       if (status >= 400) {
         console.warn(`HTTP ${status} for listing ${url}`);
-        return false;
+        return { ok: false, status };
       }
-      return true;
+      return { ok: true, status };
     } catch (err) {
       console.warn(
         `Navigation attempt ${attempt + 1} failed for ${url}: ${err instanceof Error ? err.message : err}`
@@ -658,7 +712,7 @@ export async function navigateWithRetry(page: Page, url: string): Promise<boolea
       }
     }
   }
-  return false;
+  return { ok: false };
 }
 
 async function settlePageBeforeExtraction(

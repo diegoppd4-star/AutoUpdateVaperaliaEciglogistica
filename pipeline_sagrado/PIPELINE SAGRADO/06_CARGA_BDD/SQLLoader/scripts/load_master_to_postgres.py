@@ -7,9 +7,11 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 INPUT_DIR = ROOT / "input_master"
@@ -19,27 +21,21 @@ LOG_DIR = ROOT / "logs"
 VENDOR_DIR = ROOT / "vendor"
 
 sys.path.insert(0, str(VENDOR_DIR))
-import psycopg  # noqa: E402
+try:
+    import psycopg  # noqa: E402
+except ModuleNotFoundError:
+    psycopg = None
 
 DISTRIBUIDORAS = {
     "eciglogistica": {
-        "id": None,
         "nombre": "Eciglogistica",
         "tiempo_entrega_default_dias": 0,
     },
     "vaperalia": {
-        "id": None,
         "nombre": "Vaperalia",
         "tiempo_entrega_default_dias": 0,
     },
 }
-
-for key, data in DISTRIBUIDORAS.items():
-    data["id"] = int(hashlib.sha256(f"distribuidora:{key}".encode("utf-8")).hexdigest()[:15], 16)
-
-
-def stable_id(value: str) -> int:
-    return int(hashlib.sha256(value.encode("utf-8")).hexdigest()[:15], 16)
 
 
 def read_json(path: Path):
@@ -49,6 +45,43 @@ def read_json(path: Path):
 def write_json(path: Path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
+
+
+def read_env_file(path):
+    values = {}
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
+
+
+def resolve_database_url():
+    direct = os.environ.get("DATABASE_URL")
+    if direct:
+        return direct
+
+    env_file = os.environ.get("DATABASE_ENV_FILE")
+    if not env_file:
+        return None
+    values = read_env_file(env_file)
+    jdbc_url = values.get("DB_URL", "")
+    user = values.get("DB_USER", "")
+    password = values.get("DB_PASSWORD", "")
+    if not jdbc_url or not user or not password:
+        raise RuntimeError("DATABASE_ENV_FILE no contiene DB_URL, DB_USER y DB_PASSWORD.")
+
+    postgres_url = jdbc_url.removeprefix("jdbc:")
+    parsed = urlsplit(postgres_url)
+    query = []
+    for key, value in parse_qsl(parsed.query, keep_blank_values=True):
+        query.append(("channel_binding" if key == "channelBinding" else key, value))
+    netloc = f"{quote(user, safe='')}:{quote(password, safe='')}@{parsed.hostname or ''}"
+    if parsed.port:
+        netloc += f":{parsed.port}"
+    return urlunsplit((parsed.scheme, netloc, parsed.path, urlencode(query), parsed.fragment))
 
 
 def trunc(value, max_len):
@@ -239,7 +272,7 @@ def link_variant(row, record):
 
 def reference_tuple(record):
     return (
-        record["_referencia_id"],
+        None,
         trunc(record.get("baseKey"), 160),
         trunc(record.get("base_ratio"), 40),
         parse_float(record.get("bote_ml")),
@@ -269,13 +302,16 @@ LINK_URL = 19
 LINK_VARIANTE = 21
 LINK_DISTRIBUIDORA_ID = 23
 LINK_REFERENCIA_ID = 24
+REFERENCE_ID = 0
+REFERENCE_EAN13 = 9
+REFERENCE_SKU = 21
 
 
-def link_tuple(record, side, distribuidora_id, row, resolution):
+def link_tuple(record, side, row, resolution):
     url = row.get("url") or (record.get("eciglogistica_url") if side == "eciglogistica" else record.get("vaperalia_url")) or ""
     variant = link_variant(row, record)
     return (
-        stable_id(f"link:{side}:{record['_source_key']}:{url}:{variant}"),
+        None,
         True,
         trunc(row.get("baseUrl") or url_without_fragment(url), 2048),
         nullable_text(row.get("brandCandidates")),
@@ -298,8 +334,8 @@ def link_tuple(record, side, distribuidora_id, row, resolution):
         trunc(row.get("variantSignature"), 255),
         variant,
         nullable_text(row.get("variantsJson")),
-        distribuidora_id,
-        record["_referencia_id"],
+        side,
+        None,
     )
 
 
@@ -316,7 +352,6 @@ def load_records():
             record["_source_file"] = file_name
             record["_source_kind"] = kind
             record["_source_key"] = f"{kind}:{record.get('id')}"
-            record["_referencia_id"] = stable_id(f"referencia:{record['_source_key']}")
             records.append(record)
     return records
 
@@ -337,14 +372,14 @@ def build_payload():
         item_links = []
         if record["_source_kind"] in ("matched_both", "only_eciglogistica"):
             row, resolution = row_for_link(record, "eciglogistica")
-            link = link_tuple(record, "eciglogistica", DISTRIBUIDORAS["eciglogistica"]["id"], row, resolution)
+            link = link_tuple(record, "eciglogistica", row, resolution)
             links.append(link)
             item_links.append(link)
         if record["_source_kind"] in ("matched_both", "only_vaperalia"):
             row, resolution = row_for_link(record, "vaperalia", vaperalia_index)
             if record["_source_kind"] == "matched_both" and resolution == "unresolved":
                 unresolved_vaperalia.append({"id": record.get("id"), "url": record.get("vaperalia_url")})
-            link = link_tuple(record, "vaperalia", DISTRIBUIDORAS["vaperalia"]["id"], row, resolution)
+            link = link_tuple(record, "vaperalia", row, resolution)
             links.append(link)
             item_links.append(link)
         load_items.append({
@@ -382,169 +417,784 @@ def run_ean_enrichment():
     }
 
 
-def reference_with_id(reference, referencia_id):
-    values = list(reference)
-    values[0] = referencia_id
+def link_with_distributor(link, distributor_ids):
+    values = list(link)
+    distributor_key = values[LINK_DISTRIBUIDORA_ID]
+    values[LINK_DISTRIBUIDORA_ID] = distributor_ids[distributor_key]
     return tuple(values)
 
 
 def link_with_reference(link, referencia_id):
     values = list(link)
     values[LINK_REFERENCIA_ID] = referencia_id
-    values[LINK_ID] = stable_id(f"link:{referencia_id}:{values[LINK_DISTRIBUIDORA_ID]}:{values[LINK_VARIANTE]}")
     return tuple(values)
 
 
-def find_existing_link_by_url(cur, link):
-    url = link[LINK_URL]
-    if not url:
-        return None
+def iter_batches(rows, batch_size, column_count):
+    safe_size = max(1, int(batch_size))
+    safe_size = min(safe_size, max(1, 60000 // max(1, column_count)))
+    for offset in range(0, len(rows), safe_size):
+        yield rows[offset:offset + safe_size]
+
+
+def execute_values(cur, prefix, rows, suffix="", returning=False):
+    if not rows:
+        return []
+    width = len(rows[0])
+    if any(len(row) != width for row in rows):
+        raise ValueError("Todas las filas de un batch deben tener la misma anchura.")
+    placeholders = ",".join(
+        "(" + ",".join(["%s"] * width) + ")"
+        for _ in rows
+    )
+    params = [value for row in rows for value in row]
+    cur.execute(prefix + placeholders + suffix, params)
+    return cur.fetchall() if returning else []
+
+
+def resolve_distributor_ids(cur):
+    rows = [
+        (data["nombre"], data["tiempo_entrega_default_dias"])
+        for data in DISTRIBUIDORAS.values()
+    ]
+    returned = execute_values(
+        cur,
+        """
+        insert into public.distributor (name, default_delivery_days)
+        values
+        """,
+        rows,
+        """
+        on conflict (name) do update set name = excluded.name
+        returning distributor_id, name
+        """,
+        returning=True,
+    )
+    by_name = {name: row_id for row_id, name in returned}
+    result = {}
+    for key, data in DISTRIBUIDORAS.items():
+        if data["nombre"] not in by_name:
+            raise RuntimeError(f"No se pudo resolver distribuidora: {data['nombre']}")
+        result[key] = by_name[data["nombre"]]
+    return result
+
+
+def load_existing_link_index(cur, distributor_ids):
+    cur.execute(
+        """
+        select distributor_reference_link_id, reference_id, distributor_id, url, variant
+        from public.distributor_reference_link
+        where distributor_id = any(%s)
+        """,
+        (list(distributor_ids.values()),),
+    )
+    result = defaultdict(list)
+    for row in cur.fetchall():
+        data = {
+            "id": row[0],
+            "referencia_id": row[1],
+            "distribuidora_id": row[2],
+            "url": row[3],
+            "variante": row[4],
+        }
+        result[(data["distribuidora_id"], data["url"], data["variante"])].append(data)
+    return result
+
+
+def quote_identifier(value):
+    return '"' + str(value).replace('"', '""') + '"'
+
+
+def reference_dependency_counts(cur, reference_ids):
+    """Count non-catalog rows that would prevent safely consolidating references."""
+    cur.execute(
+        """
+        select tc.table_schema, tc.table_name, kcu.column_name
+        from information_schema.table_constraints tc
+        join information_schema.key_column_usage kcu
+          on kcu.constraint_schema = tc.constraint_schema
+         and kcu.constraint_name = tc.constraint_name
+        join information_schema.referential_constraints rc
+          on rc.constraint_schema = tc.constraint_schema
+         and rc.constraint_name = tc.constraint_name
+        join information_schema.constraint_column_usage ccu
+          on ccu.constraint_schema = rc.unique_constraint_schema
+         and ccu.constraint_name = rc.unique_constraint_name
+        where tc.constraint_type = 'FOREIGN KEY'
+          and ccu.table_schema = 'public'
+          and ccu.table_name = 'reference'
+          and ccu.column_name = 'reference_id'
+        order by tc.table_schema, tc.table_name, kcu.column_name
+        """
+    )
+    counts = Counter()
+    details = []
+    for schema, table, column in cur.fetchall():
+        if schema == "public" and table == "distributor_reference_link" and column == "reference_id":
+            continue
+        cur.execute(
+            f"select {quote_identifier(column)}, count(*) "
+            f"from {quote_identifier(schema)}.{quote_identifier(table)} "
+            f"where {quote_identifier(column)} = any(%s) "
+            f"group by {quote_identifier(column)}",
+            (list(reference_ids),),
+        )
+        for reference_id, row_count in cur.fetchall():
+            counts[reference_id] += row_count
+            details.append({
+                "schema": schema,
+                "table": table,
+                "column": column,
+                "reference_id": reference_id,
+                "rows": row_count,
+            })
+    return counts, details
+
+
+def safely_merge_split_references(cur, reference_ids, dedupe_identical_links=False):
+    """Consolidate proven matches only when business FK usage makes the merge unambiguous."""
+    reference_ids = sorted(set(reference_ids))
+    dependency_counts, dependency_details = reference_dependency_counts(cur, reference_ids)
+    referenced_ids = sorted(reference_id for reference_id in reference_ids if dependency_counts[reference_id])
+    if len(referenced_ids) > 1:
+        return {
+            "merged": False,
+            "reason": "multiple_references_have_business_dependencies",
+            "dependencies": dependency_details,
+        }
+
+    survivor_id = referenced_ids[0] if referenced_ids else reference_ids[0]
+    merged_ids = [reference_id for reference_id in reference_ids if reference_id != survivor_id]
+    cur.execute(
+        """
+        select distributor_reference_link_id, reference_id, distributor_id, variant, url
+        from public.distributor_reference_link
+        where reference_id = any(%s)
+        order by distributor_reference_link_id
+        """,
+        (reference_ids,),
+    )
+    link_groups = defaultdict(list)
+    for link_id, reference_id, distributor_id, variant, url in cur.fetchall():
+        link_groups[(distributor_id, variant)].append({
+            "link_id": link_id,
+            "reference_id": reference_id,
+            "distributor_id": distributor_id,
+            "variant": variant,
+            "url": url,
+        })
+    collisions = [group for group in link_groups.values() if len(group) > 1]
+    redundant_link_ids = []
+    if collisions:
+        urls_are_identical = all(len({row["url"] for row in group}) == 1 for group in collisions)
+        if not dedupe_identical_links or not urls_are_identical:
+            return {
+                "merged": False,
+                "reason": "distributor_variant_collision",
+                "collisions": collisions,
+                "dependencies": dependency_details,
+            }
+        for group in collisions:
+            survivor_rows = [row for row in group if row["reference_id"] == survivor_id]
+            keeper = min(survivor_rows or group, key=lambda row: row["link_id"])
+            redundant_link_ids.extend(
+                row["link_id"] for row in group if row["link_id"] != keeper["link_id"]
+            )
+
+    if redundant_link_ids:
+        redundant_link_ids = sorted(set(redundant_link_ids))
+        cur.execute(
+            """
+            delete from public.distributor_reference_link
+            where distributor_reference_link_id = any(%s)
+            returning distributor_reference_link_id
+            """,
+            (redundant_link_ids,),
+        )
+        deleted_link_ids = sorted(row[0] for row in cur.fetchall())
+        if deleted_link_ids != redundant_link_ids:
+            raise RuntimeError(
+                "Limpieza inconsistente durante merge: "
+                f"esperados={redundant_link_ids}, borrados={deleted_link_ids}"
+            )
 
     cur.execute(
         """
-        select id, referencia_id, distribuidora_id, url, variante
-        from public.referencia_distribuidora_links
-        where distribuidora_id = %s
-          and url = %s
-          and variante = %s
+        update public.distributor_reference_link
+        set reference_id = %s
+        where reference_id = any(%s)
         """,
-        (link[LINK_DISTRIBUIDORA_ID], url, link[LINK_VARIANTE]),
+        (survivor_id, merged_ids),
     )
-    rows = cur.fetchall()
-    if not rows:
-        return None
-    if len(rows) > 1:
+    moved_links = cur.rowcount
+    cur.execute(
+        "delete from public.reference where reference_id = any(%s) returning reference_id",
+        (merged_ids,),
+    )
+    deleted_ids = sorted(row[0] for row in cur.fetchall())
+    if deleted_ids != merged_ids:
         raise RuntimeError(
-            "Ambiguous existing links for "
-            f"distribuidora_id={link[LINK_DISTRIBUIDORA_ID]}, url={url}, variante={link[LINK_VARIANTE]}"
+            f"Merge inconsistente: se esperaban borrar {merged_ids}, se borraron {deleted_ids}."
         )
-    row = rows[0]
     return {
-        "id": row[0],
-        "referencia_id": row[1],
-        "distribuidora_id": row[2],
-        "url": row[3],
-        "variante": row[4],
+        "merged": True,
+        "survivor_reference_id": survivor_id,
+        "merged_reference_ids": merged_ids,
+        "moved_links": moved_links,
+        "duplicate_links_deleted": redundant_link_ids,
+        "dependencies": dependency_details,
     }
 
 
-def sku_exists_elsewhere(cur, sku, referencia_id):
-    if not sku:
-        return False
-    cur.execute(
-        "select 1 from public.referencias where sku = %s and id <> %s limit 1",
-        (sku, referencia_id),
-    )
-    return cur.fetchone() is not None
+def prepare_reference_uniques(reference_items, existing_rows, stats):
+    sku_owners = {sku: row_id for row_id, sku, _ in existing_rows if sku}
+    ean_owners = {ean: row_id for row_id, _, ean in existing_rows if ean}
 
+    for item in reference_items:
+        values = list(item["reference"])
+        referencia_id = item.get("resolved_reference_id")
+        values[REFERENCE_ID] = referencia_id
 
-def ean_exists_elsewhere(cur, ean13, referencia_id):
-    if not ean13:
-        return False
-    cur.execute(
-        "select 1 from public.referencias where ean13 = %s and id <> %s limit 1",
-        (ean13, referencia_id),
-    )
-    return cur.fetchone() is not None
+        ean = values[REFERENCE_EAN13]
+        ean_owner = ean_owners.get(ean) if ean else None
+        if ean_owner is not None and ean_owner != referencia_id:
+            values[REFERENCE_EAN13] = None
+            stats["existing_eans_set_null"] += 1
+        elif ean:
+            ean_owners[ean] = referencia_id or item["record"]["_source_key"]
 
-
-def avoid_existing_reference_uniques(cur, reference, stats):
-    values = list(reference)
-    referencia_id = values[0]
-    ean_index = 9
-    sku_index = 21
-
-    if ean_exists_elsewhere(cur, values[ean_index], referencia_id):
-        values[ean_index] = None
-        stats["existing_eans_set_null"] += 1
-
-    if sku_exists_elsewhere(cur, values[sku_index], referencia_id):
-        base = values[sku_index] or f"REF-{referencia_id}"
-        for attempt in range(20):
-            suffix = hashlib.sha256(f"{referencia_id}:{base}:{attempt}".encode("utf-8")).hexdigest()[:12]
-            candidate = f"{str(base)[:107]}-{suffix}"
-            if not sku_exists_elsewhere(cur, candidate, referencia_id):
-                values[sku_index] = candidate
-                stats["existing_skus_renamed"] += 1
-                break
-        else:
-            raise RuntimeError(f"No se pudo generar SKU unico para referencia {referencia_id}")
-
-    return tuple(values)
+        sku = values[REFERENCE_SKU]
+        sku_owner = sku_owners.get(sku) if sku else None
+        if sku_owner is not None and sku_owner != referencia_id:
+            base = sku or item["record"]["_source_key"]
+            for attempt in range(100):
+                suffix = hashlib.sha256(
+                    f"{item['record']['_source_key']}:{base}:{attempt}".encode("utf-8")
+                ).hexdigest()[:12]
+                candidate = f"{str(base)[:107]}-{suffix}"
+                if candidate not in sku_owners:
+                    values[REFERENCE_SKU] = candidate
+                    sku = candidate
+                    stats["existing_skus_renamed"] += 1
+                    break
+            else:
+                raise RuntimeError(
+                    f"No se pudo generar SKU unico para {item['record']['_source_key']}"
+                )
+        sku_owners[sku] = referencia_id or item["record"]["_source_key"]
+        item["reference"] = tuple(values)
 
 
 def execute_load(dsn, payload, batch_size):
-    distribuidoras = [
-        (data["id"], data["nombre"], data["tiempo_entrega_default_dias"])
-        for data in DISTRIBUIDORAS.values()
-    ]
+    if psycopg is None:
+        raise RuntimeError("Falta psycopg; instalalo para ejecutar una carga real.")
+    started_at = time.monotonic()
     stats = {
         "references_upserted": 0,
         "links_upserted": 0,
         "new_reference_ids": 0,
         "existing_reference_ids_reused": 0,
         "legacy_url_links_resolved": 0,
+        "split_reference_items_merged": 0,
+        "references_merged": 0,
+        "links_moved_by_merge": 0,
+        "split_reference_items_skipped": 0,
+        "ambiguous_url_variant_items_skipped": 0,
+        "ambiguous_url_variant_items_repaired": 0,
+        "ambiguous_single_side_items_detached": 0,
+        "duplicate_existing_links_deleted": 0,
         "existing_skus_renamed": 0,
         "existing_eans_set_null": 0,
+        "duplicate_reference_payloads_ignored": 0,
+        "duplicate_link_payloads_ignored": 0,
+        "ambiguous_input_link_groups": 0,
+        "ambiguous_input_links_omitted": 0,
+        "items_without_unambiguous_links_skipped": 0,
     }
+    split_reference_conflicts = []
+    split_reference_merges = []
+    ambiguous_url_variant_conflicts = []
+    ambiguous_url_variant_repairs = []
+    duplicate_reference_payloads = []
+    ambiguous_input_links = []
 
     with psycopg.connect(dsn) as conn:
         with conn.cursor() as cur:
-            cur.executemany(
-                """
-                insert into public.distribuidoras (id, nombre, tiempo_entrega_default_dias)
-                values (%s, %s, %s)
-                on conflict (id) do update set
-                  nombre = excluded.nombre,
-                  tiempo_entrega_default_dias = excluded.tiempo_entrega_default_dias
-                """,
-                distribuidoras,
+            distributor_ids = resolve_distributor_ids(cur)
+            print(f"[DB] Distribuidoras resueltas: {len(distributor_ids)}", flush=True)
+
+            existing_link_index = load_existing_link_index(cur, distributor_ids)
+            print(
+                f"[DB] Links existentes precargados: {sum(len(rows) for rows in existing_link_index.values())}",
+                flush=True,
             )
 
-            ref_sql = """
-                insert into public.referencias (
-                  id, base_key, base_ratio, bote_ml, cafeina, cantidad_ml, categoria, color,
-                  contenido_ml, ean13, linea_producto, marca, marca_comercial,
-                  minimo_unidades_compra, nivel_nicotina, name, omniaje, pod_type,
-                  product_type, sabor, tamano, sku
+            resolved_input_items = []
+            for source_item in payload["load_items"]:
+                resolved_input_items.append({
+                    **source_item,
+                    "links": [
+                        link_with_distributor(link, distributor_ids)
+                        for link in source_item["links"]
+                    ],
+                })
+
+            input_link_owners = defaultdict(list)
+            for item in resolved_input_items:
+                for link in item["links"]:
+                    key = (link[LINK_DISTRIBUIDORA_ID], link[LINK_URL], link[LINK_VARIANTE])
+                    input_link_owners[key].append(item["record"]["_source_key"])
+            ambiguous_input_keys = {
+                key for key, source_keys in input_link_owners.items()
+                if len(source_keys) > 1
+            }
+            stats["ambiguous_input_link_groups"] = len(ambiguous_input_keys)
+            stats["ambiguous_input_links_omitted"] = sum(
+                len(input_link_owners[key]) for key in ambiguous_input_keys
+            )
+            for key in sorted(ambiguous_input_keys, key=lambda value: (value[0], value[1] or "", value[2] or "")):
+                source_keys = input_link_owners[key]
+                print(
+                    "WARNING: omitting ambiguous input link shared by "
+                    f"{len(source_keys)} records: {key[1]} [{key[2]}]",
+                    file=sys.stderr,
                 )
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                on conflict (id) do update set
+                if len(ambiguous_input_links) < 100:
+                    ambiguous_input_links.append({
+                        "distribuidora_id": key[0],
+                        "url": key[1],
+                        "variante": key[2],
+                        "source_keys": source_keys,
+                    })
+
+            accepted_items = []
+            for item in resolved_input_items:
+                item["links"] = [
+                    link for link in item["links"]
+                    if (link[LINK_DISTRIBUIDORA_ID], link[LINK_URL], link[LINK_VARIANTE])
+                    not in ambiguous_input_keys
+                ]
+                if not item["links"]:
+                    stats["items_without_unambiguous_links_skipped"] += 1
+                    continue
+                existing_links = []
+                ambiguous_links = []
+                for link in item["links"]:
+                    matches = existing_link_index.get(
+                        (link[LINK_DISTRIBUIDORA_ID], link[LINK_URL], link[LINK_VARIANTE]),
+                        [],
+                    )
+                    if len(matches) > 1:
+                        ambiguous_links.append({
+                            "input": {
+                                "distribuidora_id": link[LINK_DISTRIBUIDORA_ID],
+                                "url": link[LINK_URL],
+                                "variante": link[LINK_VARIANTE],
+                            },
+                            "existing_links": matches,
+                        })
+                    elif matches:
+                        existing_links.append(matches[0])
+
+                if ambiguous_links:
+                    anchor_reference_ids = {
+                        row["referencia_id"]
+                        for row in existing_links
+                        if row["referencia_id"] is not None
+                    }
+                    repaired_links = []
+                    redundant_link_ids = []
+                    if len(anchor_reference_ids) == 1:
+                        anchor_reference_id = next(iter(anchor_reference_ids))
+                        for conflict in ambiguous_links:
+                            anchored = [
+                                row for row in conflict["existing_links"]
+                                if row["referencia_id"] == anchor_reference_id
+                            ]
+                            if len(anchored) != 1:
+                                repaired_links = []
+                                redundant_link_ids = []
+                                break
+                            repaired_links.append(anchored[0])
+                            redundant_link_ids.extend(
+                                row["id"]
+                                for row in conflict["existing_links"]
+                                if row["id"] != anchored[0]["id"]
+                            )
+
+                    duplicate_merge = None
+                    duplicate_reference_ids = set()
+                    if not repaired_links:
+                        duplicate_reference_ids = {
+                            row["referencia_id"]
+                            for conflict in ambiguous_links
+                            for row in conflict["existing_links"]
+                            if row["referencia_id"] is not None
+                        }
+                        if duplicate_reference_ids:
+                            duplicate_merge = safely_merge_split_references(
+                                cur,
+                                duplicate_reference_ids,
+                                dedupe_identical_links=True,
+                            )
+
+                    if repaired_links and redundant_link_ids:
+                        redundant_link_ids = sorted(set(redundant_link_ids))
+                        cur.execute(
+                            """
+                            delete from public.distributor_reference_link
+                            where distributor_reference_link_id = any(%s)
+                            returning distributor_reference_link_id
+                            """,
+                            (redundant_link_ids,),
+                        )
+                        deleted_link_ids = {row[0] for row in cur.fetchall()}
+                        if deleted_link_ids != set(redundant_link_ids):
+                            raise RuntimeError(
+                                "Limpieza inconsistente de links duplicados: "
+                                f"esperados={redundant_link_ids}, borrados={sorted(deleted_link_ids)}"
+                            )
+                        for key, rows in list(existing_link_index.items()):
+                            existing_link_index[key] = [
+                                row for row in rows if row["id"] not in deleted_link_ids
+                            ]
+                        existing_links.extend(repaired_links)
+                        stats["ambiguous_url_variant_items_repaired"] += 1
+                        stats["duplicate_existing_links_deleted"] += len(deleted_link_ids)
+                        if len(ambiguous_url_variant_repairs) < 100:
+                            ambiguous_url_variant_repairs.append({
+                                "source_kind": item["record"].get("_source_kind"),
+                                "source_id": item["record"].get("id"),
+                                "anchor_reference_id": next(iter(anchor_reference_ids)),
+                                "deleted_link_ids": sorted(deleted_link_ids),
+                                "repaired_links": repaired_links,
+                            })
+                        print(
+                            "[DB] URL+variante duplicado reparado mediante referencia ancla: "
+                            f"{next(iter(anchor_reference_ids))}; "
+                            f"links eliminados {sorted(deleted_link_ids)}",
+                            flush=True,
+                        )
+                    elif duplicate_merge and duplicate_merge["merged"]:
+                        survivor_id = duplicate_merge["survivor_reference_id"]
+                        merged_ids = set(duplicate_merge["merged_reference_ids"])
+                        deleted_link_ids = set(duplicate_merge["duplicate_links_deleted"])
+                        for key, rows in list(existing_link_index.items()):
+                            retained = []
+                            for row in rows:
+                                if row["id"] in deleted_link_ids:
+                                    continue
+                                if row["referencia_id"] in merged_ids:
+                                    row["referencia_id"] = survivor_id
+                                retained.append(row)
+                            existing_link_index[key] = retained
+                        for conflict in ambiguous_links:
+                            key = (
+                                conflict["input"]["distribuidora_id"],
+                                conflict["input"]["url"],
+                                conflict["input"]["variante"],
+                            )
+                            repaired = existing_link_index.get(key, [])
+                            if len(repaired) != 1:
+                                raise RuntimeError(
+                                    "La consolidacion de URL+variante no produjo un unico link: "
+                                    f"{conflict['input']} -> {len(repaired)}"
+                                )
+                            existing_links.append(repaired[0])
+                        stats["ambiguous_url_variant_items_repaired"] += 1
+                        stats["duplicate_existing_links_deleted"] += len(deleted_link_ids)
+                        stats["references_merged"] += len(merged_ids)
+                        stats["links_moved_by_merge"] += duplicate_merge["moved_links"]
+                        if len(ambiguous_url_variant_repairs) < 100:
+                            ambiguous_url_variant_repairs.append({
+                                "source_kind": item["record"].get("_source_kind"),
+                                "source_id": item["record"].get("id"),
+                                "repair": "identical_link_reference_merge",
+                                **duplicate_merge,
+                            })
+                        print(
+                            "[DB] Referencias duplicadas consolidadas por URL+variante identico: "
+                            f"{sorted(merged_ids)} -> {survivor_id}; "
+                            f"links eliminados {sorted(deleted_link_ids)}",
+                            flush=True,
+                        )
+                    elif (
+                        duplicate_merge
+                        and not duplicate_merge["merged"]
+                        and item["record"].get("_source_kind")
+                        in {"only_eciglogistica", "only_vaperalia"}
+                        and duplicate_reference_ids
+                    ):
+                        dependency_counts, dependency_details = reference_dependency_counts(
+                            cur,
+                            duplicate_reference_ids,
+                        )
+                        if any(dependency_counts.values()):
+                            duplicate_merge = {
+                                **duplicate_merge,
+                                "detach_blocker": "business_dependencies",
+                                "dependencies": dependency_details,
+                            }
+                            stats["ambiguous_url_variant_items_skipped"] += 1
+                            if len(ambiguous_url_variant_conflicts) < 100:
+                                ambiguous_url_variant_conflicts.append({
+                                    "source_kind": item["record"].get("_source_kind"),
+                                    "source_id": item["record"].get("id"),
+                                    "conflicts": ambiguous_links,
+                                    "repair_blocker": duplicate_merge,
+                                })
+                            print(
+                                "WARNING: keeping ambiguous URL+variant because referenced "
+                                f"business rows block detachment: {item['record'].get('id')}",
+                                file=sys.stderr,
+                            )
+                            continue
+                        else:
+                            detached_link_ids = sorted({
+                                row["id"]
+                                for conflict in ambiguous_links
+                                for row in conflict["existing_links"]
+                            })
+                            cur.execute(
+                                """
+                                delete from public.distributor_reference_link
+                                where distributor_reference_link_id = any(%s)
+                                returning distributor_reference_link_id
+                                """,
+                                (detached_link_ids,),
+                            )
+                            deleted_link_ids = {row[0] for row in cur.fetchall()}
+                            if deleted_link_ids != set(detached_link_ids):
+                                raise RuntimeError(
+                                    "Detach inconsistente de links ambiguos: "
+                                    f"esperados={detached_link_ids}, borrados={sorted(deleted_link_ids)}"
+                                )
+                            for key, rows in list(existing_link_index.items()):
+                                existing_link_index[key] = [
+                                    row for row in rows if row["id"] not in deleted_link_ids
+                                ]
+                            stats["ambiguous_url_variant_items_repaired"] += 1
+                            stats["ambiguous_single_side_items_detached"] += 1
+                            stats["duplicate_existing_links_deleted"] += len(deleted_link_ids)
+                            if len(ambiguous_url_variant_repairs) < 100:
+                                ambiguous_url_variant_repairs.append({
+                                    "source_kind": item["record"].get("_source_kind"),
+                                    "source_id": item["record"].get("id"),
+                                    "repair": "detached_to_new_single_side_reference",
+                                    "old_reference_ids": sorted(duplicate_reference_ids),
+                                    "deleted_link_ids": sorted(deleted_link_ids),
+                                })
+                            print(
+                                "[DB] Link ambiguo separado para crear referencia independiente: "
+                                f"refs antiguas {sorted(duplicate_reference_ids)}; "
+                                f"links eliminados {sorted(deleted_link_ids)}",
+                                flush=True,
+                            )
+                    else:
+                        stats["ambiguous_url_variant_items_skipped"] += 1
+                        for conflict in ambiguous_links:
+                            existing_refs = sorted({
+                                row["referencia_id"]
+                                for row in conflict["existing_links"]
+                                if row["referencia_id"] is not None
+                            })
+                            print(
+                                "WARNING: skipping item with ambiguous existing URL+variant "
+                                f"across referencias {existing_refs}: "
+                                f"{conflict['input']['url']} [{conflict['input']['variante']}]",
+                                file=sys.stderr,
+                            )
+                        if len(ambiguous_url_variant_conflicts) < 100:
+                            ambiguous_url_variant_conflicts.append({
+                                "source_kind": item["record"].get("_source_kind"),
+                                "source_id": item["record"].get("id"),
+                                "conflicts": ambiguous_links,
+                            })
+                        continue
+
+                existing_reference_ids = {row["referencia_id"] for row in existing_links if row["referencia_id"] is not None}
+                if len(existing_reference_ids) > 1:
+                    merge = safely_merge_split_references(cur, existing_reference_ids)
+                    if merge["merged"]:
+                        survivor_id = merge["survivor_reference_id"]
+                        merged_ids = set(merge["merged_reference_ids"])
+                        for rows in existing_link_index.values():
+                            for row in rows:
+                                if row["referencia_id"] in merged_ids:
+                                    row["referencia_id"] = survivor_id
+                        for row in existing_links:
+                            if row["referencia_id"] in merged_ids:
+                                row["referencia_id"] = survivor_id
+                        stats["split_reference_items_merged"] += 1
+                        stats["references_merged"] += len(merged_ids)
+                        stats["links_moved_by_merge"] += merge["moved_links"]
+                        existing_reference_ids = {survivor_id}
+                        print(
+                            "[DB] Merge seguro de referencias divididas: "
+                            f"{sorted(merged_ids)} -> {survivor_id}",
+                            flush=True,
+                        )
+                        if len(split_reference_merges) < 100:
+                            split_reference_merges.append({
+                                "source_kind": item["record"].get("_source_kind"),
+                                "source_id": item["record"].get("id"),
+                                **merge,
+                            })
+                    else:
+                        stats["split_reference_items_skipped"] += 1
+                        refs = ", ".join(str(value) for value in sorted(existing_reference_ids))
+                        urls = ", ".join(link[LINK_URL] or "" for link in item["links"])
+                        print(
+                            "WARNING: skipping matched item already split across referencias "
+                            f"({refs}; {merge['reason']}): {urls}",
+                            file=sys.stderr,
+                        )
+                        if len(split_reference_conflicts) < 100:
+                            split_reference_conflicts.append({
+                                "source_kind": item["record"].get("_source_kind"),
+                                "source_id": item["record"].get("id"),
+                                "existing_reference_ids": sorted(existing_reference_ids),
+                                "merge_blocker": merge,
+                                "links": [
+                                    {
+                                        "distribuidora_id": row["distribuidora_id"],
+                                        "url": row["url"],
+                                        "variante": row["variante"],
+                                        "referencia_id": row["referencia_id"],
+                                    }
+                                    for row in existing_links
+                                ],
+                            })
+                        continue
+
+                if existing_reference_ids:
+                    referencia_id = next(iter(existing_reference_ids))
+                    stats["existing_reference_ids_reused"] += 1
+                    stats["legacy_url_links_resolved"] += len(existing_links)
+                else:
+                    referencia_id = None
+                    stats["new_reference_ids"] += 1
+                item["resolved_reference_id"] = referencia_id
+                accepted_items.append(item)
+
+            print(
+                f"[DB] Resolucion: {len(accepted_items)} aceptados, "
+                f"{stats['ambiguous_url_variant_items_skipped']} ambiguos, "
+                f"{stats['split_reference_items_skipped']} divididos, "
+                f"{stats['ambiguous_input_links_omitted']} links de entrada omitidos",
+                flush=True,
+            )
+
+            reference_items = []
+            reference_item_by_existing_id = {}
+            for item in accepted_items:
+                referencia_id = item["resolved_reference_id"]
+                if referencia_id is None:
+                    reference_items.append(item)
+                    continue
+                prior = reference_item_by_existing_id.get(referencia_id)
+                if prior is None:
+                    reference_item_by_existing_id[referencia_id] = item
+                    reference_items.append(item)
+                else:
+                    stats["duplicate_reference_payloads_ignored"] += 1
+                    if len(duplicate_reference_payloads) < 100:
+                        duplicate_reference_payloads.append({
+                            "referencia_id": referencia_id,
+                            "kept_source_key": prior["record"]["_source_key"],
+                            "ignored_source_key": item["record"]["_source_key"],
+                        })
+
+            cur.execute("select reference_id, sku, ean13 from public.reference")
+            existing_reference_rows = cur.fetchall()
+            prepare_reference_uniques(reference_items, existing_reference_rows, stats)
+
+            existing_reference_prefix = """
+                insert into public.reference (
+                  reference_id, base_key, base_ratio, bottle_ml, caffeine, quantity_ml, category, color,
+                  content_ml, ean13, product_line, brand, commercial_brand,
+                  minimum_purchase_units, nicotine_level, name, resistance, pod_type,
+                  product_type, flavor, size, sku
+                ) values
+            """
+            reference_update_suffix = """
+                on conflict (reference_id) do update set
                   base_key = excluded.base_key,
                   base_ratio = excluded.base_ratio,
-                  bote_ml = excluded.bote_ml,
-                  cafeina = excluded.cafeina,
-                  cantidad_ml = excluded.cantidad_ml,
-                  categoria = excluded.categoria,
+                  bottle_ml = excluded.bottle_ml,
+                  caffeine = excluded.caffeine,
+                  quantity_ml = excluded.quantity_ml,
+                  category = excluded.category,
                   color = excluded.color,
-                  contenido_ml = excluded.contenido_ml,
+                  content_ml = excluded.content_ml,
                   ean13 = excluded.ean13,
-                  linea_producto = excluded.linea_producto,
-                  marca = excluded.marca,
-                  marca_comercial = excluded.marca_comercial,
-                  minimo_unidades_compra = excluded.minimo_unidades_compra,
-                  nivel_nicotina = excluded.nivel_nicotina,
+                  product_line = excluded.product_line,
+                  brand = excluded.brand,
+                  commercial_brand = excluded.commercial_brand,
+                  minimum_purchase_units = excluded.minimum_purchase_units,
+                  nicotine_level = excluded.nicotine_level,
                   name = excluded.name,
-                  omniaje = excluded.omniaje,
+                  resistance = excluded.resistance,
                   pod_type = excluded.pod_type,
                   product_type = excluded.product_type,
-                  sabor = excluded.sabor,
-                  tamano = excluded.tamano,
+                  flavor = excluded.flavor,
+                  size = excluded.size,
                   sku = excluded.sku
+                returning reference_id, sku
             """
+            existing_items = [item for item in reference_items if item["resolved_reference_id"] is not None]
+            processed = 0
+            for batch in iter_batches(existing_items, batch_size, 22):
+                execute_values(
+                    cur,
+                    existing_reference_prefix,
+                    [item["reference"] for item in batch],
+                    reference_update_suffix,
+                    returning=True,
+                )
+                processed += len(batch)
+                print(f"[DB] Referencias existentes: {processed}/{len(existing_items)}", flush=True)
 
-            link_sql = """
-                insert into public.referencia_distribuidora_links (
-                  id, activo, base_url, brand_candidates, breadcrumb_path, deleted_at,
+            new_reference_prefix = """
+                insert into public.reference (
+                  base_key, base_ratio, bottle_ml, caffeine, quantity_ml, category, color,
+                  content_ml, ean13, product_line, brand, commercial_brand,
+                  minimum_purchase_units, nicotine_level, name, resistance, pod_type,
+                  product_type, flavor, size, sku
+                ) values
+            """
+            new_reference_suffix = " returning reference_id, sku"
+            new_items = [item for item in reference_items if item["resolved_reference_id"] is None]
+            new_by_sku = {item["reference"][REFERENCE_SKU]: item for item in new_items}
+            processed = 0
+            for batch in iter_batches(new_items, batch_size, 21):
+                returned = execute_values(
+                    cur,
+                    new_reference_prefix,
+                    [item["reference"][1:] for item in batch],
+                    new_reference_suffix,
+                    returning=True,
+                )
+                for referencia_id, sku in returned:
+                    new_by_sku[sku]["resolved_reference_id"] = referencia_id
+                processed += len(batch)
+                print(f"[DB] Referencias nuevas: {processed}/{len(new_items)}", flush=True)
+
+            stats["references_upserted"] = len(reference_items)
+
+            link_prefix = """
+                insert into public.distributor_reference_link (
+                  active, base_url, brand_candidates, breadcrumb_path, deleted_at,
                   derived_reference_color, description, match_confidence, match_reason,
                   meta_description, price_tax_excluded, reference_color, scraped_at,
                   source_brand, source_reference, source_title, synthetic_reference,
-                  updated_at, url, variant_signature, variante, variants_json,
-                  distribuidora_id, referencia_id
-                )
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                on conflict (referencia_id, distribuidora_id, variante) do update set
-                  activo = excluded.activo,
+                  updated_at, url, variant_signature, variant, variants_json,
+                  distributor_id, reference_id
+                ) values
+            """
+            link_suffix = """
+                on conflict (reference_id, distributor_id, variant) do update set
+                  active = excluded.active,
                   base_url = excluded.base_url,
                   brand_candidates = excluded.brand_candidates,
                   breadcrumb_path = excluded.breadcrumb_path,
@@ -564,51 +1214,56 @@ def execute_load(dsn, payload, batch_size):
                   updated_at = excluded.updated_at,
                   url = excluded.url,
                   variant_signature = excluded.variant_signature,
-                  variante = excluded.variante,
                   variants_json = excluded.variants_json
+                returning distributor_reference_link_id
             """
-
-            for item in payload["load_items"]:
-                existing_links = []
+            link_rows_by_key = {}
+            for item in accepted_items:
+                referencia_id = item["resolved_reference_id"]
+                if referencia_id is None:
+                    raise RuntimeError(
+                        f"Referencia nueva sin ID para {item['record']['_source_key']}"
+                    )
                 for link in item["links"]:
-                    existing = find_existing_link_by_url(cur, link)
-                    if existing:
-                        existing_links.append(existing)
+                    row = link_with_reference(link, referencia_id)[1:]
+                    key = (
+                        row[LINK_REFERENCIA_ID - 1],
+                        row[LINK_DISTRIBUIDORA_ID - 1],
+                        row[LINK_VARIANTE - 1],
+                    )
+                    if key in link_rows_by_key:
+                        stats["duplicate_link_payloads_ignored"] += 1
+                    else:
+                        link_rows_by_key[key] = row
+            link_rows = list(link_rows_by_key.values())
 
-                existing_reference_ids = {row["referencia_id"] for row in existing_links if row["referencia_id"] is not None}
-                if len(existing_reference_ids) > 1:
-                    refs = ", ".join(str(value) for value in sorted(existing_reference_ids))
-                    urls = ", ".join(link[LINK_URL] or "" for link in item["links"])
-                    raise RuntimeError(f"Matched input points to multiple existing referencias ({refs}) for urls: {urls}")
+            processed = 0
+            for batch in iter_batches(link_rows, batch_size, 24):
+                execute_values(cur, link_prefix, batch, link_suffix, returning=True)
+                processed += len(batch)
+                print(f"[DB] Links: {processed}/{len(link_rows)}", flush=True)
+            stats["links_upserted"] = len(link_rows)
 
-                if existing_reference_ids:
-                    referencia_id = next(iter(existing_reference_ids))
-                    stats["existing_reference_ids_reused"] += 1
-                    stats["legacy_url_links_resolved"] += len(existing_links)
-                else:
-                    referencia_id = item["reference"][0]
-                    stats["new_reference_ids"] += 1
-
-                reference = reference_with_id(item["reference"], referencia_id)
-                reference = avoid_existing_reference_uniques(cur, reference, stats)
-                cur.execute(ref_sql, reference)
-                stats["references_upserted"] += 1
-
-                for link in item["links"]:
-                    cur.execute(link_sql, link_with_reference(link, referencia_id))
-                    stats["links_upserted"] += 1
-
-            cur.execute("select count(*) from public.referencias")
+            cur.execute("select count(*) from public.reference")
             referencias_count = cur.fetchone()[0]
-            cur.execute("select count(*) from public.referencia_distribuidora_links")
+            cur.execute("select count(*) from public.distributor_reference_link")
             links_count = cur.fetchone()[0]
-            cur.execute("select count(*) from public.distribuidoras")
+            cur.execute("select count(*) from public.distributor")
             distribuidoras_count = cur.fetchone()[0]
         conn.commit()
+    elapsed_seconds = round(time.monotonic() - started_at, 3)
+    print(f"[DB] COMMIT completado en {elapsed_seconds}s", flush=True)
     return {
         "referencias_count": referencias_count,
         "links_count": links_count,
         "distribuidoras_count": distribuidoras_count,
+        "split_reference_conflict_sample": split_reference_conflicts,
+        "split_reference_merge_sample": split_reference_merges,
+        "ambiguous_url_variant_conflict_sample": ambiguous_url_variant_conflicts,
+        "ambiguous_url_variant_repair_sample": ambiguous_url_variant_repairs,
+        "duplicate_reference_payload_sample": duplicate_reference_payloads,
+        "ambiguous_input_link_sample": ambiguous_input_links,
+        "elapsed_seconds": elapsed_seconds,
         **stats,
     }
 
@@ -650,9 +1305,9 @@ def main():
     }
 
     if not args.dry_run:
-        dsn = os.environ.get("DATABASE_URL")
+        dsn = resolve_database_url()
         if not dsn:
-            raise SystemExit("Falta DATABASE_URL en el entorno.")
+            raise SystemExit("Falta DATABASE_URL o DATABASE_ENV_FILE en el entorno.")
         report["dbResult"] = execute_load(dsn, payload, args.batch_size)
 
     write_json(RUN_DIR / "sql-loader-report.json", report)
@@ -688,6 +1343,14 @@ def main():
             f"- referencias nuevas generadas: {db_result['new_reference_ids']}",
             f"- referencias existentes reutilizadas desde links: {db_result['existing_reference_ids_reused']}",
             f"- links existentes resueltos por URL+variante: {db_result['legacy_url_links_resolved']}",
+            f"- matched divididos fusionados de forma segura: {db_result['split_reference_items_merged']}",
+            f"- referencias redundantes eliminadas por merge seguro: {db_result['references_merged']}",
+            f"- links movidos por merge seguro: {db_result['links_moved_by_merge']}",
+            f"- matched omitidos porque sus dos links ya apuntaban a referencias distintas: {db_result['split_reference_items_skipped']}",
+            f"- items URL+variante duplicados reparados mediante ancla: {db_result['ambiguous_url_variant_items_repaired']}",
+            f"- items de un solo proveedor separados a referencia nueva: {db_result['ambiguous_single_side_items_detached']}",
+            f"- links existentes redundantes eliminados: {db_result['duplicate_existing_links_deleted']}",
+            f"- items omitidos por URL+variante duplicado en links existentes: {db_result['ambiguous_url_variant_items_skipped']}",
             f"- SKUs renombrados por conflicto contra BDD existente: {db_result['existing_skus_renamed']}",
             f"- EAN13 dejados a NULL por conflicto contra BDD existente: {db_result['existing_eans_set_null']}",
         ]

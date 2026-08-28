@@ -1,6 +1,6 @@
 FROM node:22-bookworm
 
-ARG CODEX_CLI_VERSION=0.135.0
+ARG CODEX_CLI_VERSION=0.149.1
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates git python3 python3-pip \
@@ -16,9 +16,13 @@ RUN cd scraper \
   && npx playwright install --with-deps chromium
 
 COPY . .
+RUN cd /app/scraper \
+  && npm run build \
+  && chmod -R a+rwX /app/scraper/dist \
+  && chmod +x /app/docker-entrypoint.sh
 
 ENV NODE_ENV=production
 ENV CODEX_EXEC_PATH=codex
 
-ENTRYPOINT ["node", "/app/run_auto_update.mjs"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["--run-name", "docker-full-refresh"]

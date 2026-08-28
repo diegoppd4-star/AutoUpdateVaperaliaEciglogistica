@@ -1,7 +1,7 @@
 import { Page } from "playwright";
 import { CheerioAPI } from "cheerio";
 import { Connector, CategoryResult, CategorySeed } from "./connector.js";
-import { EnrichmentResult } from "../types.js";
+import { EnrichmentResult, VariantSourceReference } from "../types.js";
 
 const VAPERALIA_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
@@ -162,12 +162,15 @@ export class VaperaliaConnector implements Connector {
     const fullName = $("h1").first().text().trim() || undefined;
     const attributeSegments = extractAttributeUrlSegments($);
 
-    // --- Extract productReference from inline JS ---
+    // --- Extract the displayed SKU/EAN and matching reference from inline JS ---
     let reference: string | undefined;
+    let productReference: string | undefined;
     $("script").each((_, el) => {
       const text = $(el).html() || "";
-      const m = text.match(/productReference\s*=\s*'([^']+)'/);
-      if (m) reference = m[1];
+      const skuMatch = text.match(/productEan13\s*=\s*(['"])([^'"]+)\1/);
+      if (skuMatch) reference = skuMatch[2].trim();
+      const referenceMatch = text.match(/productReference\s*=\s*(['"])([^'"]+)\1/);
+      if (referenceMatch) productReference = referenceMatch[2].trim();
     });
 
     // --- Extract brand from full name: "ProductName - Brand" ---
@@ -281,10 +284,10 @@ export class VaperaliaConnector implements Connector {
       });
     }
 
-    const variantReferenceValues = await fetchVariantReferenceValues(
+    const variantMetadata = await fetchVariantMetadata(
       $,
       productUrl,
-      reference,
+      productReference,
       variants
     );
 
@@ -309,8 +312,14 @@ export class VaperaliaConnector implements Connector {
       variantUrlSegments:
         Object.keys(variantUrlSegments).length > 0 ? variantUrlSegments : undefined,
       variantReferenceValues:
-        Object.keys(variantReferenceValues).length > 0
-          ? variantReferenceValues
+        Object.keys(variantMetadata.referenceValues).length > 0
+          ? variantMetadata.referenceValues
+          : undefined,
+      // Presence matters: [] means that variants exist but the endpoint did
+      // not prove a SKU for them, so expansion must not reuse productEan13.
+      variantSourceReferences:
+        Object.keys(variants).length > 0
+          ? variantMetadata.sourceReferences
           : undefined,
       fullName,
       brand,
@@ -417,21 +426,29 @@ function addVariantUrlSegment(
 interface VaperaliaCombination {
   attributes_values?: Record<string, string>;
   reference?: string;
+  ean13?: string;
 }
 
-async function fetchVariantReferenceValues(
+interface VaperaliaVariantMetadata {
+  referenceValues: Record<string, Record<string, string>>;
+  sourceReferences: VariantSourceReference[];
+}
+
+async function fetchVariantMetadata(
   $: CheerioAPI,
   productUrl: string,
   baseReference: string | undefined,
   variants: Record<string, string[]>
-): Promise<Record<string, Record<string, string>>> {
+): Promise<VaperaliaVariantMetadata> {
+  const empty: VaperaliaVariantMetadata = { referenceValues: {}, sourceReferences: [] };
+  if (Object.keys(variants).length === 0) return empty;
+
   const colorLabels = Object.keys(variants).filter((label) =>
     /^color$/i.test(label.trim())
   );
-  if (colorLabels.length === 0 || !baseReference) return {};
 
   const productId = extractProductId($, productUrl);
-  if (!productId) return {};
+  if (!productId) return empty;
 
   const endpoint = new URL("/index.php", productUrl);
   endpoint.searchParams.set("controller", "product");
@@ -448,38 +465,78 @@ async function fetchVariantReferenceValues(
       redirect: "follow",
     });
     clearTimeout(timeout);
-    if (!res.ok) return {};
+    if (!res.ok) return empty;
 
     const payload: unknown = await res.json();
     const combinations = collectCombinations(payload);
     const byColorValue = new Map<string, string>();
+    const sourceReferencesByCombination = new Map<string, Set<string>>();
 
     for (const combination of combinations) {
-      if (!combination.reference || !combination.attributes_values) continue;
-      const referenceColor = extractReferenceVariantValue(
-        combination.reference,
-        baseReference
-      );
+      if (!combination.attributes_values) continue;
+      const attributeValues = Object.values(combination.attributes_values);
+      const combinationKey = variantCombinationKey(attributeValues);
+      const sourceReference = normalizeEan13(combination.ean13);
+      if (combinationKey && sourceReference) {
+        const identifiers = sourceReferencesByCombination.get(combinationKey) ?? new Set<string>();
+        identifiers.add(sourceReference);
+        sourceReferencesByCombination.set(combinationKey, identifiers);
+      }
+
+      if (!combination.reference || !baseReference || colorLabels.length === 0) continue;
+      const referenceColor = extractReferenceVariantValue(combination.reference, baseReference);
       if (!referenceColor) continue;
 
-      for (const value of Object.values(combination.attributes_values)) {
+      for (const value of attributeValues) {
         byColorValue.set(normalizeVariantLookup(value), referenceColor);
       }
     }
 
-    const result: Record<string, Record<string, string>> = {};
+    const referenceValues: Record<string, Record<string, string>> = {};
     for (const label of colorLabels) {
       for (const value of variants[label]) {
         const referenceColor = byColorValue.get(normalizeVariantLookup(value));
         if (!referenceColor) continue;
-        result[label] ??= {};
-        result[label][value] = referenceColor;
+        referenceValues[label] ??= {};
+        referenceValues[label][value] = referenceColor;
       }
     }
-    return result;
+
+    const sourceReferences: VariantSourceReference[] = [];
+    for (const combination of combinations) {
+      if (!combination.attributes_values) continue;
+      const attributeValues = Object.values(combination.attributes_values);
+      const key = variantCombinationKey(attributeValues);
+      const identifiers = sourceReferencesByCombination.get(key);
+      // Conflicting identifiers for one exact combination are unsafe. Leaving
+      // it unresolved is preferable to silently linking the wrong reference.
+      if (!key || !identifiers || identifiers.size !== 1) continue;
+      if (sourceReferences.some((entry) => variantCombinationKey(entry.attributeValues) === key)) continue;
+      sourceReferences.push({ attributeValues, sourceReference: [...identifiers][0] });
+    }
+
+    return { referenceValues, sourceReferences };
   } catch {
-    return {};
+    return empty;
   }
+}
+
+function variantCombinationKey(values: string[]): string {
+  return values
+    .map(normalizeVariantLookup)
+    .filter(Boolean)
+    .sort()
+    .join("\u001f");
+}
+
+function normalizeEan13(value: unknown): string | null {
+  const normalized = String(value ?? "").trim();
+  if (!/^\d{13}$/.test(normalized)) return null;
+  let sum = 0;
+  for (let index = 0; index < 12; index++) {
+    sum += Number(normalized[index]) * (index % 2 === 0 ? 1 : 3);
+  }
+  return (10 - (sum % 10)) % 10 === Number(normalized[12]) ? normalized : null;
 }
 
 function collectCombinations(payload: unknown): VaperaliaCombination[] {
@@ -503,7 +560,7 @@ function isCombination(value: unknown): value is VaperaliaCombination {
   if (!value || typeof value !== "object") return false;
   const obj = value as Record<string, unknown>;
   return (
-    typeof obj.reference === "string" &&
+    (typeof obj.reference === "string" || typeof obj.ean13 === "string") &&
     !!obj.attributes_values &&
     typeof obj.attributes_values === "object"
   );

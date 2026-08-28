@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="9cd08eef-33a1-48c0-b045-a9195143cecf" name="Changes" comment="Cambio carga BDD">
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pipeline_sagrado/PIPELINE SAGRADO/04_ANEXO_CAPA_IA_NO_DETERMINISTA/generate-description-rescue-decisions-codexexec.js" beforeDir="false" afterPath="$PROJECT_DIR$/pipeline_sagrado/PIPELINE SAGRADO/04_ANEXO_CAPA_IA_NO_DETERMINISTA/generate-description-rescue-decisions-codexexec.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scraper/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/scraper/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scraper/src/connectors/connector.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scraper/src/connectors/connector.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scraper/src/connectors/eciglogistica.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scraper/src/connectors/eciglogistica.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scraper/src/connectors/vaperalia.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scraper/src/connectors/vaperalia.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scraper/src/crawler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scraper/src/crawler.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;PedroPoole&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/diegoppd4-star/AutoUpdateVaperaliaEciglogistica.git&quot;,
+    &quot;accountId&quot;: &quot;f355a3d1-867e-4142-9ae3-747e3d344a08&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3EZsoDOzGyy8I70wRt1f5VUxLhK" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Git.Working.Tree.Tab.closed.by.user&quot;: &quot;opened&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-34e2839f716b-intellij.indexing.shared.core-IU-262.9437.185" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.9437.185" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="9cd08eef-33a1-48c0-b045-a9195143cecf" name="Changes" comment="" />
+      <created>1780397598846</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1780397598846</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Paso a docker compose, pasos 4 y 5 de pipeline sagrado, cambios de scraper">
+      <option name="closed" value="true" />
+      <created>1780397690831</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1780397690831</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Cambio carga BDD">
+      <option name="closed" value="true" />
+      <created>1780588661736</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1780588661736</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Paso a docker compose, pasos 4 y 5 de pipeline sagrado, cambios de scraper" />
+    <MESSAGE value="Cambio carga BDD" />
+    <option name="LAST_COMMIT_MESSAGE" value="Cambio carga BDD" />
+  </component>
+</project>

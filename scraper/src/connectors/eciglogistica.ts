@@ -28,6 +28,7 @@ export class EciglogisticaConnector implements Connector {
   phase2FetchMode = "http" as const;
   delayMs = 600;
   failOnListingFailures = true;
+  linkedPaginationNotFoundEndsCategory = true;
   failOnEnrichErrors = true;
   phase2Concurrency = 1;
 

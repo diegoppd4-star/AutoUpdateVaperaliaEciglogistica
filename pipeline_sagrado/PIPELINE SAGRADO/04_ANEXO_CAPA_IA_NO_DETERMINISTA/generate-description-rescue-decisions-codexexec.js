@@ -1,6 +1,7 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { createHash } = require("crypto");
 const { spawn } = require("child_process");
 
 function parseArgs(argv) {
@@ -28,6 +29,13 @@ function parseArgs(argv) {
   }
   args.batchSize = Math.max(1, Number(args.batchSize || 25));
   args.timeoutMs = Number(args.timeoutMs || 20 * 60 * 1000);
+  args.checkpointDir = args.checkpointDir || path.join(path.dirname(args.out), "codexexec-batches");
+  if (args.reasoningEffort) {
+    const allowed = new Set(["none", "low", "medium", "high", "xhigh", "max"]);
+    if (!allowed.has(args.reasoningEffort)) {
+      throw new Error(`Reasoning effort invalido: ${args.reasoningEffort}`);
+    }
+  }
   return args;
 }
 
@@ -57,6 +65,86 @@ function shortText(value, max = 1600) {
   return `${text.slice(0, max)}...`;
 }
 
+function normalizeIdentityValue(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function sideVariantValues(side) {
+  return String(side.variant || "")
+    .split(";")
+    .map((part) => part.includes(":") ? part.slice(part.indexOf(":") + 1) : part)
+    .map(normalizeIdentityValue)
+    .filter(Boolean);
+}
+
+function dimensionalValues(side) {
+  const values = sideVariantValues(side);
+  const text = `${side.title || ""} ${side.variant || ""}`;
+  for (const match of text.matchAll(/\b\d+(?:[.,]\d+)?\s*(?:mg|ml|ohm|mah|w)\b/gi)) {
+    values.push(normalizeIdentityValue(match[0]));
+  }
+  return [...new Set(values)];
+}
+
+function rowsMatchingValues(candidates, expectedValues) {
+  if (!expectedValues.length) return [];
+  return candidates.filter((item) => {
+    const itemValues = Object.values(item.variants || {}).map(normalizeIdentityValue);
+    const itemTitle = normalizeIdentityValue(item.name || item.title);
+    return expectedValues.every((value) => itemValues.includes(value) || itemTitle.includes(value));
+  });
+}
+
+function selectOriginalScrapeRow(side, originalIndex, counterpart = {}) {
+  const exact = originalIndex.exact.get(normalizeUrl(side.url)) || [];
+  const base = originalIndex.base.get(baseUrl(side.url)) || [];
+  const candidates = exact.length ? exact : base;
+  if (!candidates.length) return { item: null, exact, base, selectedBy: "not_found" };
+  if (candidates.length === 1) return { item: candidates[0], exact, base, selectedBy: "unique_url" };
+
+  const expectedTitle = normalizeIdentityValue(side.title);
+  const titleMatches = candidates.filter((item) =>
+    normalizeIdentityValue(item.name || item.title) === expectedTitle
+  );
+  if (titleMatches.length === 1) {
+    return { item: titleMatches[0], exact, base, selectedBy: "exact_variant_title" };
+  }
+
+  const expectedValues = sideVariantValues(side);
+  if (expectedValues.length) {
+    const variantMatches = rowsMatchingValues(candidates, expectedValues);
+    if (variantMatches.length === 1) {
+      return { item: variantMatches[0], exact, base, selectedBy: "exact_variant_values" };
+    }
+  }
+
+  const counterpartValues = dimensionalValues(counterpart);
+  if (counterpartValues.length) {
+    const counterpartMatches = rowsMatchingValues(candidates, counterpartValues);
+    if (counterpartMatches.length === 1) {
+      return { item: counterpartMatches[0], exact, base, selectedBy: "counterpart_variant_values" };
+    }
+  }
+
+  const variantId = normalizeIdentityValue(side.variantId);
+  const skuMatches = candidates.filter((item) => {
+    const sku = normalizeIdentityValue(item.sku);
+    return sku && variantId.includes(sku);
+  });
+  if (skuMatches.length === 1) {
+    return { item: skuMatches[0], exact, base, selectedBy: "variant_id_sku" };
+  }
+
+  throw new Error(
+    `No se pudo resolver una fila scrapeada unica para la variante '${side.title || side.variantId || "sin titulo"}' ` +
+    `en ${side.url}: ${candidates.length} filas comparten URL.`
+  );
+}
+
 function indexOriginalScrape(filePath) {
   const empty = { exact: new Map(), base: new Map() };
   if (!filePath || !fs.existsSync(filePath)) return empty;
@@ -79,15 +167,14 @@ function indexOriginalScrape(filePath) {
   return index;
 }
 
-function scrapeEvidenceFor(side, originalIndex) {
-  const exact = originalIndex.exact.get(normalizeUrl(side.url)) || [];
-  const base = originalIndex.base.get(baseUrl(side.url)) || [];
-  const item = exact[0] || base[0] || null;
+function scrapeEvidenceFor(side, originalIndex, counterpart = {}) {
+  const { item, exact, base, selectedBy } = selectOriginalScrapeRow(side, originalIndex, counterpart);
   if (!item) {
     return {
       url: side.url,
       title: side.title,
       variant: side.variant || "",
+      selectedBy,
       foundInOriginalScrape: false,
     };
   }
@@ -107,6 +194,7 @@ function scrapeEvidenceFor(side, originalIndex) {
     metaDescription: shortText(item.metaDescription, 1400),
     exactOriginalRows: exact.length,
     baseOriginalRows: base.length,
+    selectedBy,
     foundInOriginalScrape: true,
   };
 }
@@ -119,6 +207,14 @@ function flattenCandidates(rescue, originalIndex) {
     let variantNumber = 0;
     for (const variant of product.variants || []) {
       variantNumber += 1;
+      const ecigSide = {
+        ...(product.eciglogistica || {}),
+        ...(variant.eciglogistica || {}),
+      };
+      const vaperaliaSide = {
+        ...(product.vaperalia || {}),
+        ...(variant.vaperalia || {}),
+      };
       rows.push({
         candidateNumber: rows.length + 1,
         sourceProductNumber: productNumber,
@@ -140,14 +236,8 @@ function flattenCandidates(rescue, originalIndex) {
           vaperaliaUrl: variant.vaperalia?.url || product.vaperalia?.url || "",
         },
         evidence: {
-          ecig: scrapeEvidenceFor({
-            ...(product.eciglogistica || {}),
-            ...(variant.eciglogistica || {}),
-          }, originalIndex),
-          vaperalia: scrapeEvidenceFor({
-            ...(product.vaperalia || {}),
-            ...(variant.vaperalia || {}),
-          }, originalIndex),
+          ecig: scrapeEvidenceFor(ecigSide, originalIndex, vaperaliaSide),
+          vaperalia: scrapeEvidenceFor(vaperaliaSide, originalIndex, ecigSide),
         },
       });
     }
@@ -163,90 +253,89 @@ function chunkArray(items, size) {
   return chunks;
 }
 
-function outputSchema() {
-  const evidenceSide = {
-    type: "object",
-    additionalProperties: false,
-    required: [
-      "reference",
-      "brand",
-      "brandCandidates",
-      "commercialBrand",
-      "category",
-      "breadcrumbPath",
-      "variantsSummary",
-      "descriptionSnippet",
-      "metaDescriptionSnippet"
-    ],
-    properties: {
-      reference: { type: "string" },
-      brand: { type: "string" },
-      brandCandidates: { type: "array", items: { type: "string" } },
-      commercialBrand: { type: "string" },
-      category: { type: "string" },
-      breadcrumbPath: { type: "array", items: { type: "string" } },
-      variantsSummary: { type: "string" },
-      descriptionSnippet: { type: "string" },
-      metaDescriptionSnippet: { type: "string" }
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function checkpointInputSha256(packet, args) {
+  const { generatedAt: _generatedAt, ...stablePacket } = packet;
+  return sha256(JSON.stringify({
+    prompt: buildPrompt(stablePacket, args),
+    outputSchema: outputSchema(),
+    requestedModel: args.model || null,
+    requestedReasoningEffort: args.reasoningEffort || null,
+  }));
+}
+
+function batchFile(checkpointDir, batchNumber, suffix = "json") {
+  return path.join(checkpointDir, `batch-${String(batchNumber).padStart(3, "0")}.${suffix}`);
+}
+
+function writeJsonAtomic(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  fs.writeFileSync(tempPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  fs.renameSync(tempPath, filePath);
+}
+
+function sanitizeDiagnostic(value, max = 16000) {
+  return String(value || "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[EMAIL_REDACTED]")
+    .replace(/(authorization\s*[:=]\s*bearer\s+)[^\s,;]+/gi, "$1[REDACTED]")
+    .replace(/((?:api[_-]?key|access[_-]?token|refresh[_-]?token|client[_-]?secret|password)\s*[:=]\s*)[^\s,;]+/gi, "$1[REDACTED]")
+    .slice(0, max);
+}
+
+function loadCheckpoint(filePath, expectedHash, batchNumber, totalBatches, candidates) {
+  if (!fs.existsSync(filePath)) return null;
+  try {
+    const checkpoint = readJson(filePath);
+    if (checkpoint.schemaVersion !== 2) throw new Error("schemaVersion incompatible");
+    if (checkpoint.batchNumber !== batchNumber || checkpoint.totalBatches !== totalBatches) {
+      throw new Error("numero o total de batches distinto");
     }
-  };
+    if (checkpoint.inputSha256 !== expectedHash) throw new Error("hash de entrada distinto");
+    if (!checkpoint.response || !Array.isArray(checkpoint.response.decisions)) {
+      throw new Error("response.decisions ausente");
+    }
+    validateAndMerge([checkpoint.response], candidates);
+    return checkpoint.response;
+  } catch (error) {
+    console.error(`[codexexec] Checkpoint descartado ${filePath}: ${error.message}`);
+    return null;
+  }
+}
+
+function writeFailureDiagnostic(filePath, metadata, error) {
+  writeJsonAtomic(filePath, {
+    schemaVersion: 1,
+    failedAt: new Date().toISOString(),
+    ...metadata,
+    error: sanitizeDiagnostic(error?.stack || error?.message || error),
+    stdoutTail: sanitizeDiagnostic(error?.stdoutTail || "", 12000),
+    stderrTail: sanitizeDiagnostic(error?.stderrTail || "", 12000),
+  });
+}
+
+function outputSchema() {
   return {
     type: "object",
     additionalProperties: false,
-    required: ["batchNumber", "notes", "decisions"],
+    required: ["decisions"],
     properties: {
-      batchNumber: { type: "integer" },
-      notes: { type: "string" },
       decisions: {
         type: "array",
         items: {
           type: "object",
           additionalProperties: false,
-          required: [
-            "reviewId",
-            "sourceProductNumber",
-            "sourceVariantNumber",
-            "decision",
-            "reviewConfidence",
-            "sourceDataset",
-            "ecigProductId",
-            "vaperaliaProductId",
-            "ecigVariantId",
-            "vaperaliaVariantId",
-            "ecigTitle",
-            "vaperaliaTitle",
-            "ecigUrl",
-            "vaperaliaUrl",
-            "reviewedFields",
-            "reviewReason",
-            "evidence"
-          ],
+          required: ["id", "label", "confidence", "reason", "decisiveEvidence", "ignoredNoise"],
           properties: {
-            reviewId: { type: "string" },
-            sourceProductNumber: { type: "integer" },
-            sourceVariantNumber: { type: "integer" },
-            decision: { enum: ["accepted", "rejected", "accept", "reject"] },
-            reviewConfidence: { enum: ["high", "medium", "low"] },
-            sourceDataset: { type: "string" },
-            ecigProductId: { type: "string" },
-            vaperaliaProductId: { type: "string" },
-            ecigVariantId: { type: "string" },
-            vaperaliaVariantId: { type: "string" },
-            ecigTitle: { type: "string" },
-            vaperaliaTitle: { type: "string" },
-            ecigUrl: { type: "string" },
-            vaperaliaUrl: { type: "string" },
-            reviewedFields: { type: "array", items: { type: "string" } },
-            reviewReason: { type: "string" },
-            evidence: {
-              type: "object",
-              additionalProperties: false,
-              required: ["ecig", "vaperalia"],
-              properties: {
-                ecig: evidenceSide,
-                vaperalia: evidenceSide
-              }
-            }
+            id: { type: "string" },
+            label: { type: "string", enum: ["SAME", "DIFFERENT"] },
+            confidence: { type: "integer", minimum: 0, maximum: 100 },
+            reason: { type: "string" },
+            decisiveEvidence: { type: "array", items: { type: "string" }, maxItems: 5 },
+            ignoredNoise: { type: "array", items: { type: "string" }, maxItems: 5 }
           }
         }
       }
@@ -254,73 +343,38 @@ function outputSchema() {
   };
 }
 
-function buildPrompt(packet) {
+function defaultIdentityPrompt() {
   return [
-    "Eres CodexExec ejecutando la capa IA/no determinista del Pipeline Sagrado Eciglogistica/Vaperalia.",
+    "You are an exact product-identity adjudicator for two distributor catalogues. For every candidate pair, decide whether the two supplied records represent the SAME sellable product variant or DIFFERENT sellable products.",
     "",
-    "OBJETIVO",
-    "Revisar semanticamente candidatos probables generados por el Pipeline 2 y producir un ledger JSON de decisiones.",
-    "Esta capa NO modifica el matcher determinista. Solo escribe decisiones auditables.",
+    "Use only CANDIDATE_PAIRS_JSON. Do not browse, open URLs, call tools, or substitute a different page. Each side is already the exact scrape row selected for comparison, even when several variants share one base URL.",
     "",
-    "REGLA DE SALIDA",
-    "- Devuelve SOLO JSON valido.",
-    "- No uses markdown.",
-    "- Debe haber exactamente una decision por cada candidato del campo candidates.",
-    "- Copia literalmente los IDs de requiredDecisionIdentity.",
-    "- Usa decision='accepted' o 'rejected'.",
-    "- No existe cola humana en esta ejecucion automatizada.",
-    "- Si dudas, rechaza: usa decision='rejected'.",
+    "Apply these rules in order:",
     "",
-    "CAMPOS QUE DEBES LEER EN CADA PAR",
-    "- URL de Eciglogistica y Vaperalia.",
-    "- titulo/base de producto.",
-    "- marca, brandCandidates y commercialBrand.",
-    "- reference/sku.",
-    "- breadcrumbPath/categoria.",
-    "- variants concretas.",
-    "- description y metaDescription.",
-    "- capacidad, nicotina, resistencia/ohm, color, pack, formato, edicion y modelo.",
+    "1. Determine identity from brand, product family, model, generation/version, named edition or recipe, product type, pack count, physical capacity/format, and selected variant attributes such as nicotine strength, resistance, colour, or size.",
+    "2. Named editions and generations are hard identity discriminators. In particular, Green Edition, Sweet Edition, Zero, Ice, V2/V3, Pro, Mini, Nano, S3, Corex 2.0, Dual Mesh, and similar qualifiers are not decorative when they distinguish a commercial recipe or model. If one record explicitly identifies an edition/generation and the other identifies the same base name without it, decide DIFFERENT unless the other record independently and explicitly proves that same edition/generation.",
+    "3. Conversely, reordered words, translations, accents, punctuation, distributor boilerplate, omitted generic words such as aroma/coil/replacement, and different distributor identifiers are not product differences.",
+    "4. For grouped product pages, compare the supplied selected row and its variants, not the page's whole option list or URL. Same base page with a different selected strength, resistance, capacity, colour, or size is a different sellable variant; matching selected attributes support SAME.",
+    "5. An exact or similar SKU/reference is supporting evidence only. It never overrides a clear edition, generation, model, capacity, pack-count, or selected-variant contradiction. A different SKU/reference across distributors is normal and does not imply DIFFERENT.",
+    "6. Product titles, explicit references, selected variants, and repeated specifications carry more identity weight than one isolated sentence in description or metadata. Treat an isolated copy inconsistency as catalogue noise when all identity-bearing fields agree. Do not dismiss a repeated or title-level discriminator as noise.",
+    "7. Compatible-with statements describe use, not necessarily identity. Use them as corroboration. Do not equate a device with its replacement pod, or two different devices merely because both accept the same pod.",
+    "8. A minor wording difference about a feature does not create a second product when brand, explicit model/generation, pack, capacity, and selected variant all match and neither page names a distinct revision. A genuinely incompatible hard specification or explicitly different model still means DIFFERENT.",
     "",
-    "CRITERIOS PARA ACEPTAR",
-    "- Misma marca real o marca comercial equivalente.",
-    "- Misma familia/producto base.",
-    "- Misma variante real cuando exista: color, nicotina, ohm, capacidad, pack, modelo.",
-    "- La descripcion o metaDescription refuerza el mismo producto/receta/modelo.",
-    "- Diferencias de orden, traduccion, abreviatura o falta de detalle en un lado son aceptables si no introducen conflicto.",
-    "- Una distribuidora puede agrupar variantes en una URL y la otra separarlas, pero la variante concreta debe coincidir.",
+    "Return one decision for every input id, preserving input order. Choose exactly SAME or DIFFERENT. Keep the reason concrete and short. In decisiveEvidence name the fields that control the decision. In ignoredNoise list only discrepancies that you deliberately did not treat as identity-bearing; otherwise return an empty array.",
+  ].join("\n");
+}
+
+function identityPrompt(args) {
+  if (!args.identityPrompt) return defaultIdentityPrompt();
+  return fs.readFileSync(path.resolve(args.identityPrompt), "utf8").trim();
+}
+
+function buildPrompt(packet, args) {
+  return [
+    identityPrompt(args),
     "",
-    "CONFLICTOS DUROS QUE OBLIGAN A RECHAZAR",
-    "- Nicotina distinta: 10mg contra 20mg, salvo que ambos lados tengan variante exacta 10-10 o 20-20.",
-    "- Color distinto real.",
-    "- Resistencia distinta: 0.6 ohm contra 0.8 ohm, salvo variante exacta coincidente.",
-    "- Capacidad primaria distinta no explicable por longfill.",
-    "- Longfill contra aroma normal si solo un lado declara longfill y bote/capacidad no lo resuelve.",
-    "- Drip tip/boquilla contra atomizador/tanque completo.",
-    "- Kit contra mod suelto.",
-    "- Version/modelo distinto: Nano, Mini, Pro, Plus, V2, Max, Lite, Koko, Legend, Primal, etc. cuando diferencian producto real.",
-    "- Edicion contradictoria: Sweet Edition contra Green Edition, Dessert Bar contra linea normal, etc.",
-    "- Marca incompatible o alias no justificado.",
-    "- Descripcion generica de familia que no confirme la variante concreta.",
-    "",
-    "LONGFILL / NICOTINA",
-    "- Longfill: el bote puede ser mucho mayor que el liquido/aroma contenido. No lo rechaces por 30ml/120ml si ambos describen longfill equivalente.",
-    "- Producto con nicotina: por ley el bote maximo no debe superar 10ml; si aparece nicotina y bote >10ml, revisa con especial dureza.",
-    "",
-    "CONFIANZA",
-    "- high: nombre propio, marca, formato y variante coinciden; descripcion lo refuerza.",
-    "- medium: diferencia de presentacion/nombre, sin conflicto y la descripcion lo resuelve.",
-    "- low: insuficiente; debe ser rejected.",
-    "",
-    "FORMATO DE CADA DECISION",
-    "- reviewId: desc-rescue-auto-<candidateNumber>",
-    "- sourceProductNumber y sourceVariantNumber desde el candidato.",
-    "- sourceDataset: description-rescue-candidates",
-    "- reviewedFields: incluye title,url,reference,brandCandidates/commercialBrand,breadcrumbPath/category,variants,description,metaDescription.",
-    "- reviewReason: explica senales y conflictos/ausencia de conflictos.",
-    "- evidence: objeto con ecig y vaperalia. Cada lado debe tener reference, brand, brandCandidates, commercialBrand, category, breadcrumbPath, variantsSummary, descriptionSnippet y metaDescriptionSnippet.",
-    "",
-    "PAQUETE DE TRABAJO",
-    JSON.stringify(packet, null, 2),
+    "CANDIDATE_PAIRS_JSON",
+    JSON.stringify(packet.candidates, null, 2),
   ].join("\n");
 }
 
@@ -355,10 +409,6 @@ function sourceCodexHomes() {
 function copyCodexBootstrapFiles(sourceDir, targetDir) {
   const filesToCopy = new Set([
     "auth.json",
-    "config.toml",
-    "installation_id",
-    "models_cache.json",
-    "version.json",
   ]);
   let copiedAuth = false;
   fs.mkdirSync(targetDir, { recursive: true });
@@ -424,7 +474,10 @@ function runProcess(command, args, stdin, options) {
       if (finished) return;
       finished = true;
       child.kill();
-      reject(new Error(`CodexExec timed out after ${options.timeoutMs}ms`));
+      const error = new Error(`CodexExec timed out after ${options.timeoutMs}ms`);
+      error.stdoutTail = stdout.slice(-12000);
+      error.stderrTail = stderr.slice(-12000);
+      reject(error);
     }, options.timeoutMs);
     child.stdout.on("data", (chunk) => { stdout += chunk.toString(); });
     child.stderr.on("data", (chunk) => { stderr += chunk.toString(); });
@@ -439,7 +492,10 @@ function runProcess(command, args, stdin, options) {
       finished = true;
       clearTimeout(timer);
       if (code !== 0) {
-        reject(new Error(`CodexExec exited with code ${code}: ${(stderr || stdout).slice(0, 4000)}`));
+        const error = new Error(`CodexExec exited with code ${code}: ${(stderr || stdout).slice(-12000)}`);
+        error.stdoutTail = stdout.slice(-12000);
+        error.stderrTail = stderr.slice(-12000);
+        reject(error);
         return;
       }
       resolve({ stdout, stderr });
@@ -476,6 +532,7 @@ async function callCodexExecPreflight(args) {
       "--output-last-message", outputFile,
     ];
     if (args.model) codexArgs.push("--model", args.model);
+    if (args.reasoningEffort) codexArgs.push("--config", `model_reasoning_effort="${args.reasoningEffort}"`);
     codexArgs.push("Responde exactamente con esta palabra: CODEX_PREFLIGHT_OK");
     const result = await runProcess(codexPath, codexArgs, "", {
       cwd: process.cwd(),
@@ -486,7 +543,13 @@ async function callCodexExecPreflight(args) {
     if (!String(text).includes("CODEX_PREFLIGHT_OK")) {
       throw new Error(`CodexExec preflight no devolvio CODEX_PREFLIGHT_OK. Respuesta: ${String(text).slice(0, 1000)}`);
     }
-    console.log(JSON.stringify({ ok: true, codexPath, preflight: "CODEX_PREFLIGHT_OK" }, null, 2));
+    console.log(JSON.stringify({
+      ok: true,
+      codexPath,
+      model: args.model || null,
+      reasoningEffort: args.reasoningEffort || null,
+      preflight: "CODEX_PREFLIGHT_OK",
+    }, null, 2));
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
@@ -510,8 +573,9 @@ async function callCodexExec(packet, args, batchNumber) {
       "--output-schema", schemaFile,
     ];
     if (args.model) codexArgs.push("--model", args.model);
+    if (args.reasoningEffort) codexArgs.push("--config", `model_reasoning_effort="${args.reasoningEffort}"`);
     codexArgs.push("-");
-    const result = await runProcess(codexPath, codexArgs, buildPrompt(packet), {
+    const result = await runProcess(codexPath, codexArgs, buildPrompt(packet, args), {
       cwd: process.cwd(),
       env: prepareCodexExecEnv(tmpDir),
       timeoutMs: args.timeoutMs,
@@ -529,32 +593,49 @@ async function callCodexExec(packet, args, batchNumber) {
   }
 }
 
-function decisionKey(decision) {
-  return `${decision.ecigVariantId || ""}|||${decision.vaperaliaVariantId || ""}`;
+function reviewIdForCandidate(candidate) {
+  return `desc-rescue-auto-${String(candidate.candidateNumber).padStart(3, "0")}`;
 }
 
-function candidateKey(candidate) {
-  return `${candidate.requiredDecisionIdentity.ecigVariantId || ""}|||${candidate.requiredDecisionIdentity.vaperaliaVariantId || ""}`;
+function promptCandidate(candidate) {
+  return {
+    id: reviewIdForCandidate(candidate),
+    a: candidate.evidence.ecig,
+    b: candidate.evidence.vaperalia,
+  };
+}
+
+function confidenceLabel(value) {
+  const confidence = Number(value);
+  if (confidence >= 90) return "high";
+  if (confidence >= 70) return "medium";
+  return "low";
 }
 
 function normalizeDecision(decision, candidate) {
   const identity = candidate.requiredDecisionIdentity;
+  if (!decision || !["SAME", "DIFFERENT"].includes(decision.label)) {
+    throw new Error(`Etiqueta invalida para ${reviewIdForCandidate(candidate)}: ${decision?.label}`);
+  }
+  if (!decision.reason) {
+    throw new Error(`Decision sin reason para ${reviewIdForCandidate(candidate)}`);
+  }
   const normalized = {
-    reviewId: decision.reviewId || `desc-rescue-auto-${String(candidate.candidateNumber).padStart(3, "0")}`,
-    sourceProductNumber: Number(decision.sourceProductNumber || candidate.sourceProductNumber),
-    sourceVariantNumber: Number(decision.sourceVariantNumber || candidate.sourceVariantNumber),
-    decision: decision.decision === "accept" ? "accepted" : decision.decision === "reject" ? "rejected" : decision.decision,
-    reviewConfidence: decision.reviewConfidence || "low",
+    reviewId: reviewIdForCandidate(candidate),
+    sourceProductNumber: candidate.sourceProductNumber,
+    sourceVariantNumber: candidate.sourceVariantNumber,
+    decision: decision.label === "SAME" ? "accepted" : "rejected",
+    reviewConfidence: confidenceLabel(decision.confidence),
     sourceDataset: "description-rescue-candidates",
     ecigProductId: identity.ecigProductId,
     vaperaliaProductId: identity.vaperaliaProductId,
     ecigVariantId: identity.ecigVariantId,
     vaperaliaVariantId: identity.vaperaliaVariantId,
-    ecigTitle: decision.ecigTitle || candidate.variant.eciglogistica?.title || candidate.base.eciglogistica?.title || "",
-    vaperaliaTitle: decision.vaperaliaTitle || candidate.variant.vaperalia?.title || candidate.base.vaperalia?.title || "",
+    ecigTitle: candidate.variant.eciglogistica?.title || candidate.base.eciglogistica?.title || "",
+    vaperaliaTitle: candidate.variant.vaperalia?.title || candidate.base.vaperalia?.title || "",
     ecigUrl: identity.ecigUrl,
     vaperaliaUrl: identity.vaperaliaUrl,
-    reviewedFields: decision.reviewedFields || [
+    reviewedFields: [
       "title",
       "url",
       "reference",
@@ -564,49 +645,36 @@ function normalizeDecision(decision, candidate) {
       "description",
       "metaDescription",
     ],
-    reviewReason: decision.reviewReason || decision.reason || "",
-    evidence: decision.evidence || {
+    reviewReason: decision.reason,
+    decisiveEvidence: Array.isArray(decision.decisiveEvidence) ? decision.decisiveEvidence : [],
+    ignoredNoise: Array.isArray(decision.ignoredNoise) ? decision.ignoredNoise : [],
+    modelConfidence: Number(decision.confidence),
+    evidence: {
       ecig: candidate.evidence.ecig,
       vaperalia: candidate.evidence.vaperalia,
     },
   };
-  if (!["accepted", "rejected"].includes(normalized.decision)) {
-    throw new Error(`Decision invalida para ${candidateKey(candidate)}: ${decision.decision}`);
-  }
-  if (!["high", "medium", "low"].includes(normalized.reviewConfidence)) {
-    normalized.reviewConfidence = normalized.decision === "accepted" ? "medium" : "low";
-  }
-  if (!normalized.reviewReason) {
-    throw new Error(`Decision sin reviewReason para ${candidateKey(candidate)}`);
-  }
   return normalized;
 }
 
 function validateAndMerge(batchResponses, candidates) {
-  const candidateByKey = new Map(candidates.map((candidate) => [candidateKey(candidate), candidate]));
+  const candidateById = new Map(candidates.map((candidate) => [reviewIdForCandidate(candidate), candidate]));
   const decisions = [];
+  const seen = new Set();
   for (const response of batchResponses) {
     for (const rawDecision of response.decisions || []) {
-      const key = decisionKey(rawDecision);
-      const candidate = candidateByKey.get(key);
-      if (!candidate) throw new Error(`CodexExec devolvio una decision sin candidato: ${key}`);
+      const candidate = candidateById.get(rawDecision.id);
+      if (!candidate) throw new Error(`CodexExec devolvio una decision sin candidato: ${rawDecision.id}`);
+      if (seen.has(rawDecision.id)) throw new Error(`Decision duplicada: ${rawDecision.id}`);
+      seen.add(rawDecision.id);
       decisions.push(normalizeDecision(rawDecision, candidate));
     }
   }
 
-  const seen = new Set();
-  const duplicates = [];
-  for (const decision of decisions) {
-    const key = decisionKey(decision);
-    if (seen.has(key)) duplicates.push(key);
-    seen.add(key);
-  }
-  if (duplicates.length) throw new Error(`Decisiones duplicadas:\n${duplicates.join("\n")}`);
-
   const missing = [];
   for (const candidate of candidates) {
-    const key = candidateKey(candidate);
-    if (!seen.has(key)) missing.push(key);
+    const id = reviewIdForCandidate(candidate);
+    if (!seen.has(id)) missing.push(id);
   }
   if (missing.length) throw new Error(`Faltan decisiones para ${missing.length} candidatos:\n${missing.join("\n")}`);
   return decisions;
@@ -635,6 +703,7 @@ async function main() {
     rescueFile: args.rescue,
     rescueAuditFile: args.rescueAudit,
     originalScrapeFile: args.originalScrape || null,
+    identityPromptFile: args.identityPrompt ? path.resolve(args.identityPrompt) : null,
     totalCandidates: candidates.length,
     batchSize: args.batchSize,
     policySummary: {
@@ -647,7 +716,11 @@ async function main() {
     auditExcerpt: shortText(auditMd, 6000),
   };
   fs.mkdirSync(path.dirname(args.promptOut), { recursive: true });
-  fs.writeFileSync(args.promptOut, `${JSON.stringify({ ...promptPacket, candidates }, null, 2)}\n`, "utf8");
+  fs.writeFileSync(args.promptOut, `${JSON.stringify({
+    ...promptPacket,
+    identityPrompt: identityPrompt(args),
+    candidates: candidates.map(promptCandidate),
+  }, null, 2)}\n`, "utf8");
 
   if (args.dryRun || args["dry-run"]) {
     console.log(JSON.stringify({
@@ -660,19 +733,60 @@ async function main() {
   }
 
   const batchResponses = [];
+  fs.mkdirSync(args.checkpointDir, { recursive: true });
   for (let index = 0; index < chunks.length; index += 1) {
     const batchNumber = index + 1;
     const packet = {
       ...promptPacket,
       batchNumber,
       totalBatches: chunks.length,
-      candidates: chunks[index],
+      candidates: chunks[index].map(promptCandidate),
     };
+    const inputSha256 = checkpointInputSha256(packet, args);
+    const checkpointPath = batchFile(args.checkpointDir, batchNumber);
+    const failurePath = batchFile(args.checkpointDir, batchNumber, "failure.json");
+    const checkpointResponse = loadCheckpoint(
+      checkpointPath,
+      inputSha256,
+      batchNumber,
+      chunks.length,
+      chunks[index]
+    );
+    if (checkpointResponse) {
+      console.error(`[codexexec] Reutilizando checkpoint batch ${batchNumber}/${chunks.length}`);
+      batchResponses.push(checkpointResponse);
+      continue;
+    }
     console.error(`[codexexec] Revisando batch ${batchNumber}/${chunks.length} (${chunks[index].length} candidatos)`);
-    const response = await callCodexExec(packet, args, batchNumber);
-    const parsed = response.parsed;
-    if (!Array.isArray(parsed.decisions)) throw new Error(`Batch ${batchNumber} no devolvio decisions[]`);
-    batchResponses.push(parsed);
+    try {
+      const response = await callCodexExec(packet, args, batchNumber);
+      const parsed = response.parsed;
+      if (!Array.isArray(parsed.decisions)) throw new Error(`Batch ${batchNumber} no devolvio decisions[]`);
+      validateAndMerge([parsed], chunks[index]);
+      writeJsonAtomic(checkpointPath, {
+        schemaVersion: 2,
+        batchNumber,
+        totalBatches: chunks.length,
+        inputSha256,
+        completedAt: new Date().toISOString(),
+        requestedModel: args.model || null,
+        requestedReasoningEffort: args.reasoningEffort || null,
+        response: parsed,
+      });
+      if (fs.existsSync(failurePath)) fs.unlinkSync(failurePath);
+      batchResponses.push(parsed);
+    } catch (error) {
+      writeFailureDiagnostic(failurePath, {
+        batchNumber,
+        totalBatches: chunks.length,
+        candidates: chunks[index].length,
+        inputSha256,
+        requestedModel: args.model || null,
+        requestedReasoningEffort: args.reasoningEffort || null,
+      }, error);
+      console.error(`[codexexec] Diagnostico persistido: ${failurePath}`);
+      throw error;
+    }
   }
 
   const decisions = validateAndMerge(batchResponses, candidates);
@@ -690,6 +804,8 @@ async function main() {
     schemaVersion: 1,
     reviewedAt: new Date().toISOString(),
     reviewer: args.reviewer,
+    requestedModel: args.model || null,
+    requestedReasoningEffort: args.reasoningEffort || null,
     sourceDataset: "description-rescue-candidates",
     basis: "Revision semantica no determinista ejecutada por CodexExec sobre candidatos del Pipeline 2, leyendo titulo, URL, referencia, marca/candidatas, categoria/breadcrumb, variantes, descripcion y metaDescription enriquecidos desde el scrape original cuando esta disponible.",
     policy: "Este ledger no cambia el matcher determinista. Solo eleva a validos revisados los pares aceptados aqui.",

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decisions"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "minItems": 22,
+      "maxItems": 22,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "label", "confidence", "reason", "decisiveEvidence", "ignoredNoise"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string", "enum": ["SAME", "DIFFERENT"] },
+          "confidence": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "reason": { "type": "string" },
+          "decisiveEvidence": { "type": "array", "items": { "type": "string" }, "maxItems": 5 },
+          "ignoredNoise": { "type": "array", "items": { "type": "string" }, "maxItems": 5 }
+        }
+      }
+    }
+  }
+}

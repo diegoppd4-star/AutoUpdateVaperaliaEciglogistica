@@ -1,0 +1,189 @@
+{
+  "model": "gpt-5.6-luna",
+  "reasoningEffort": "max",
+  "prompt": "prompts/iteration-01.txt",
+  "total": 22,
+  "passed": 22,
+  "failed": 0,
+  "missing": [],
+  "unexpected": [],
+  "success": true,
+  "comparisons": [
+    {
+      "id": "conflict-01-leviathan-v2-green",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 99,
+      "reason": "A explicitly identifies Green Edition, while B only identifies the base Leviathan V2; the edition is a distinct recipe."
+    },
+    {
+      "id": "conflict-02-phoenix-green",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 99,
+      "reason": "A names Phoenix Green Edition, but B names only the base Ultimate Phoenix aroma."
+    },
+    {
+      "id": "conflict-03-shinigami-green",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 99,
+      "reason": "A explicitly names Shinigami Green Edition, which B does not independently identify."
+    },
+    {
+      "id": "conflict-04-shinigami-zero-green",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Shinigami Zero, but only A explicitly identifies the distinct Green Edition."
+    },
+    {
+      "id": "conflict-05-valkyrie-green",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 99,
+      "reason": "A names Valkyrie Green Edition, while B identifies Valkyrie without that edition qualifier."
+    },
+    {
+      "id": "conflict-06-ivg-neon-lime-20mg",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both are IVG Neon Lime nicotine salt liquid in the selected 20 mg, 10 ml variant."
+    },
+    {
+      "id": "conflict-07-ivg-paradise-lagoon-20mg",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both are IVG Paradise Lagoon nicotine salt liquid in the selected 20 mg, 10 ml variant."
+    },
+    {
+      "id": "conflict-08-ursa-nano-vs-s3",
+      "expected": "DIFFERENT",
+      "actual": "DIFFERENT",
+      "pass": true,
+      "confidence": 100,
+      "reason": "Ursa Nano and Ursa Nano S3 are different models/generations, reinforced by incompatible battery and output specifications."
+    },
+    {
+      "id": "conflict-09-ursa-v3-pod-08",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both are Lost Vape Ursa V3 replacement pods, pack of 3, 2 ml, with the selected 0.8 ohm resistance."
+    },
+    {
+      "id": "conflict-10-ursa-v3-pod-10",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both are Lost Vape Ursa V3 replacement pods, pack of 3, 2 ml, with the selected 1.0 ohm resistance."
+    },
+    {
+      "id": "conflict-11-xros-corex2-pod-08",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Vaporesso Xros Series Corex 2.0 pods, pack of 4, 2 ml, selected at 0.8 ohm."
+    },
+    {
+      "id": "conflict-12-xros-corex2-pod-12",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Vaporesso Xros Series Corex 2.0 pods, pack of 4, 2 ml, selected at 1.2 ohm."
+    },
+    {
+      "id": "control-01-succube-v2-sweet",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both identify the A&L Ultimate Succube V2 Sweet Edition aroma in 30 ml format."
+    },
+    {
+      "id": "control-02-delirio-longfill",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both identify Alquimia Para Vapers Delirio Longfill with 20 ml of aroma in a 120 ml bottle."
+    },
+    {
+      "id": "control-03-apple-sours-longfill",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Dinner Lady Apple Sours Longfill with 14 ml of aroma in a 60 ml bottle."
+    },
+    {
+      "id": "control-04-caliburn-g-coil-08",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Uwell Caliburn G coils, pack of 4, selected at 0.8 ohm."
+    },
+    {
+      "id": "control-05-crown-x-coil-03",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Uwell Crown X coils, pack of 4, selected at 0.3 ohm."
+    },
+    {
+      "id": "control-06-gti-dual-mesh-02",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 100,
+      "reason": "Both identify Vaporesso GTi Dual Mesh coils, pack of 5, selected at 0.2 ohm."
+    },
+    {
+      "id": "control-07-itank2-glass-8ml",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify the Vaporesso iTank 2 glass/Pyrex replacement in the selected 8 ml capacity."
+    },
+    {
+      "id": "control-08-itank-t-dual-mesh-silver",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both identify the Vaporesso iTank T Dual Mesh, 2 ml, selected in Silver; B explicitly confirms Dual Mesh in its specifications."
+    },
+    {
+      "id": "control-09-luxe-x-corex2-pod-03",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 99,
+      "reason": "Both identify Vaporesso Luxe X replacement pods, pack of 2, 2 ml, selected at 0.3 ohm Corex 2.0."
+    },
+    {
+      "id": "control-10-tormento-aroma-10ml",
+      "expected": "SAME",
+      "actual": "SAME",
+      "pass": true,
+      "confidence": 98,
+      "reason": "Both identify Alquimia Para Vapers Tormento aroma in the 10 ml format."
+    }
+  ]
+}

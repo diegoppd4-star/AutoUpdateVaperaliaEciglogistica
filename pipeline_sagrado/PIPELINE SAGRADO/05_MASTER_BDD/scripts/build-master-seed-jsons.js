@@ -361,6 +361,7 @@ function writeReadme(filePath, summary) {
     "- `master_matched_both.json`: referencias aceptadas como presentes en Eciglogistica y Vaperalia.",
     "- `master_only_eciglogistica.json`: referencias de Eciglogistica sin match aceptado.",
     "- `master_only_vaperalia.json`: referencias de Vaperalia sin match aceptado.",
+    "- `master_one_to_many_rejected.json`: candidatos descartados por la proteccion uno-a-uno, con ambas URLs para revision humana.",
     "",
     "## Criterio usado",
     "",
@@ -381,6 +382,7 @@ function writeReadme(filePath, summary) {
     `- matches probable: ${summary.matchedProbable}`,
     `- matches IA no determinista aceptados: ${summary.reviewedAccepted}`,
     `- pares duplicados exactos descartados: ${summary.duplicatePairsSkipped}`,
+    `- candidatos uno-a-varios descartados: ${summary.oneToManyCandidatesSkipped}`,
     `- referencias Ecig aceptadas contra mas de una Vaperalia: ${summary.oneToManyEcigLinks}`,
     `- referencias Vaperalia aceptadas contra mas de una Ecig: ${summary.oneToManyVaperaliaLinks}`,
     `- variantes Ecig resueltas desde salida sintetica: ${summary.syntheticEcigMatches}`,
@@ -405,6 +407,50 @@ function duplicateGroups(map) {
   return [...map.entries()]
     .filter(([, items]) => items.length > 1)
     .sort((left, right) => right[1].length - left[1].length || left[0].localeCompare(right[0]));
+}
+
+const IDENTITY_STOP_WORDS = new Set([
+  "a", "and", "aroma", "bote", "botella", "capacidad", "coil", "con", "de", "del",
+  "e", "el", "en", "edition", "for", "la", "las", "los", "ml", "mg", "nic", "nicotine",
+  "ohm", "pack", "para", "pcs", "pod", "replacement", "resistencia", "salt", "salts", "the",
+  "unidades", "uds", "y",
+]);
+
+function identityTokens(value) {
+  return normalize(value)
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(" ")
+    .filter((token) => token.length > 1 && !IDENTITY_STOP_WORDS.has(token));
+}
+
+function urlTitleIdentityScore(url, title) {
+  const urlTokens = new Set(identityTokens(urlWithoutVariant(url)));
+  const titleTokens = [...new Set(identityTokens(title))];
+  if (!titleTokens.length) return 0;
+  const shared = titleTokens.filter((token) => urlTokens.has(token)).length;
+  return shared / titleTokens.length;
+}
+
+function candidatePriority(product, variant, ecigResolved, vaperaliaResolved) {
+  const reviewed = product.sourceDataset === "reviewed-rescues" || variant.reviewDecision === "accepted";
+  const valid = variant.status === "valid";
+  const baseConfidence = Number(product.baseConfidence || 0);
+  const finalConfidence = Number(variant.finalConfidence || 0);
+  const ecigTitle = variant.eciglogistica?.title || ecigResolved.row.title || "";
+  const ecigUrl = variant.eciglogistica?.url || ecigResolved.row.url || "";
+  const vaperaliaTitle = variant.vaperalia?.title || vaperaliaResolved.row.title || "";
+  const vaperaliaUrl = variant.vaperalia?.url || vaperaliaResolved.row.url || "";
+  const urlIdentity =
+    urlTitleIdentityScore(ecigUrl, vaperaliaTitle)
+    + urlTitleIdentityScore(vaperaliaUrl, ecigTitle);
+  return [reviewed ? 1 : 0, valid ? 1 : 0, baseConfidence, finalConfidence, urlIdentity];
+}
+
+function compareCandidatePriority(left, right) {
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return right[index] - left[index];
+  }
+  return 0;
 }
 
 function writeAudit(filePath, summary, ecigDuplicates, vaperaliaDuplicates) {
@@ -454,7 +500,7 @@ function main() {
   const vaperalia = loadSide(args.vaperaliaBase, args.vaperaliaVariants);
 
   const acceptedStatuses = new Set(["valid", "probable"]);
-  const matchedBoth = [];
+  let matchedBoth = [];
   const matchedEcigVariantIds = new Set();
   const matchedVaperaliaVariantIds = new Set();
   const seenPairs = new Set();
@@ -466,6 +512,8 @@ function main() {
   let reviewedAccepted = 0;
   let syntheticEcigMatches = 0;
   let syntheticVaperaliaMatches = 0;
+  let oneToManyCandidatesSkipped = 0;
+  const oneToManyRejected = [];
 
   for (const product of general.products || []) {
     for (const variant of product.variants || []) {
@@ -482,8 +530,6 @@ function main() {
       }
       seenPairs.add(pairKey);
 
-      if (ecigResolved.resolvedPreparedId) matchedEcigVariantIds.add(ecigResolved.resolvedPreparedId);
-      if (vaperaliaResolved.resolvedPreparedId) matchedVaperaliaVariantIds.add(vaperaliaResolved.resolvedPreparedId);
       const ecigAcceptedKey = ecigResolved.resolvedPreparedId || variant.eciglogistica?.variantId || "";
       const vaperaliaAcceptedKey = vaperaliaResolved.resolvedPreparedId || variant.vaperalia?.variantId || "";
       const auditItem = {
@@ -493,21 +539,7 @@ function main() {
         vaperaliaTitle: variant.vaperalia?.title || vaperaliaResolved.row.title || "",
         vaperaliaUrl: variant.vaperalia?.url || vaperaliaResolved.row.url || "",
       };
-      if (ecigAcceptedKey) {
-        if (!ecigAcceptedMap.has(ecigAcceptedKey)) ecigAcceptedMap.set(ecigAcceptedKey, []);
-        ecigAcceptedMap.get(ecigAcceptedKey).push(auditItem);
-      }
-      if (vaperaliaAcceptedKey) {
-        if (!vaperaliaAcceptedMap.has(vaperaliaAcceptedKey)) vaperaliaAcceptedMap.set(vaperaliaAcceptedKey, []);
-        vaperaliaAcceptedMap.get(vaperaliaAcceptedKey).push(auditItem);
-      }
-      if (ecigResolved.resolution === "synthetic_output_variant") syntheticEcigMatches += 1;
-      if (vaperaliaResolved.resolution === "synthetic_output_variant") syntheticVaperaliaMatches += 1;
-      if (variant.status === "valid") matchedValid += 1;
-      if (variant.status === "probable") matchedProbable += 1;
-      if (product.sourceDataset === "reviewed-rescues" || variant.reviewDecision === "accepted") reviewedAccepted += 1;
-
-      matchedBoth.push(recordFromRow({
+      const record = recordFromRow({
         classification: "matched_both",
         side: "both",
         row: ecigResolved.row,
@@ -525,9 +557,68 @@ function main() {
           eciglogistica_url: variant.eciglogistica?.url || ecigResolved.row.url || "",
           vaperalia_url: variant.vaperalia?.url || vaperaliaResolved.row.url || "",
         },
-      }));
+      });
+      record.__candidate = {
+        pairKey,
+        ecigAcceptedKey,
+        vaperaliaAcceptedKey,
+        ecigResolvedPreparedId: ecigResolved.resolvedPreparedId || "",
+        vaperaliaResolvedPreparedId: vaperaliaResolved.resolvedPreparedId || "",
+        auditItem,
+        priority: candidatePriority(product, variant, ecigResolved, vaperaliaResolved),
+        reviewed: product.sourceDataset === "reviewed-rescues" || variant.reviewDecision === "accepted",
+        syntheticEcig: ecigResolved.resolution === "synthetic_output_variant",
+        syntheticVaperalia: vaperaliaResolved.resolution === "synthetic_output_variant",
+      };
+      matchedBoth.push(record);
     }
   }
+
+  const usedEcigKeys = new Set();
+  const usedVaperaliaKeys = new Set();
+  const selected = [];
+  for (const record of [...matchedBoth].sort((left, right) => {
+    const priority = compareCandidatePriority(left.__candidate.priority, right.__candidate.priority);
+    return priority || left.__candidate.pairKey.localeCompare(right.__candidate.pairKey);
+  })) {
+    const candidate = record.__candidate;
+    const ecigConflict = candidate.ecigAcceptedKey && usedEcigKeys.has(candidate.ecigAcceptedKey);
+    const vaperaliaConflict = candidate.vaperaliaAcceptedKey && usedVaperaliaKeys.has(candidate.vaperaliaAcceptedKey);
+    if (ecigConflict || vaperaliaConflict) {
+      oneToManyCandidatesSkipped += 1;
+      oneToManyRejected.push({
+        id: record.id,
+        eciglogistica_url: record.eciglogistica_url,
+        vaperalia_url: record.vaperalia_url,
+        sourceDataset: record.sourceDataset,
+        matchConfidence: record.matchConfidence,
+        baseConfidence: record.baseConfidence,
+        reason: record.reason,
+        conflictSide: ecigConflict && vaperaliaConflict ? "both" : ecigConflict ? "eciglogistica" : "vaperalia",
+      });
+      continue;
+    }
+    if (candidate.ecigAcceptedKey) usedEcigKeys.add(candidate.ecigAcceptedKey);
+    if (candidate.vaperaliaAcceptedKey) usedVaperaliaKeys.add(candidate.vaperaliaAcceptedKey);
+    if (candidate.ecigResolvedPreparedId) matchedEcigVariantIds.add(candidate.ecigResolvedPreparedId);
+    if (candidate.vaperaliaResolvedPreparedId) matchedVaperaliaVariantIds.add(candidate.vaperaliaResolvedPreparedId);
+    if (candidate.ecigAcceptedKey) {
+      if (!ecigAcceptedMap.has(candidate.ecigAcceptedKey)) ecigAcceptedMap.set(candidate.ecigAcceptedKey, []);
+      ecigAcceptedMap.get(candidate.ecigAcceptedKey).push(candidate.auditItem);
+    }
+    if (candidate.vaperaliaAcceptedKey) {
+      if (!vaperaliaAcceptedMap.has(candidate.vaperaliaAcceptedKey)) vaperaliaAcceptedMap.set(candidate.vaperaliaAcceptedKey, []);
+      vaperaliaAcceptedMap.get(candidate.vaperaliaAcceptedKey).push(candidate.auditItem);
+    }
+    if (candidate.syntheticEcig) syntheticEcigMatches += 1;
+    if (candidate.syntheticVaperalia) syntheticVaperaliaMatches += 1;
+    if (record.matchStatus === "valid") matchedValid += 1;
+    if (record.matchStatus === "probable") matchedProbable += 1;
+    if (candidate.reviewed) reviewedAccepted += 1;
+    delete record.__candidate;
+    selected.push(record);
+  }
+  matchedBoth = selected;
 
   const onlyEcig = [];
   for (const row of ecig.variantRows) {
@@ -571,6 +662,7 @@ function main() {
   writeJson(path.join(args.outDir, "master_matched_both.json"), matchedBoth);
   writeJson(path.join(args.outDir, "master_only_eciglogistica.json"), onlyEcig);
   writeJson(path.join(args.outDir, "master_only_vaperalia.json"), onlyVaperalia);
+  writeJson(path.join(args.outDir, "master_one_to_many_rejected.json"), oneToManyRejected);
   const ecigDuplicates = duplicateGroups(ecigAcceptedMap);
   const vaperaliaDuplicates = duplicateGroups(vaperaliaAcceptedMap);
   const summary = {
@@ -581,6 +673,7 @@ function main() {
     matchedProbable,
     reviewedAccepted,
     duplicatePairsSkipped,
+    oneToManyCandidatesSkipped,
     oneToManyEcigLinks: ecigDuplicates.length,
     oneToManyVaperaliaLinks: vaperaliaDuplicates.length,
     syntheticEcigMatches,
@@ -598,6 +691,7 @@ function main() {
     matched_probable: matchedProbable,
     reviewed_accepted: reviewedAccepted,
     duplicate_pairs_skipped: duplicatePairsSkipped,
+    one_to_many_candidates_skipped: oneToManyCandidatesSkipped,
     one_to_many_ecig_links: ecigDuplicates.length,
     one_to_many_vaperalia_links: vaperaliaDuplicates.length,
     synthetic_ecig_matches: syntheticEcigMatches,

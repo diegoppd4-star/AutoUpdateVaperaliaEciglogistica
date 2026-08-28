@@ -38,6 +38,12 @@ export interface EnrichmentResult {
   variants: Record<string, string[]>;
   variantUrlSegments?: Record<string, Record<string, string>>;
   variantReferenceValues?: Record<string, Record<string, string>>;
+  /**
+   * Supplier identifiers for complete variant combinations. An explicit empty
+   * array means variants exist but no trustworthy per-combination identifier
+   * was available; callers must not fall back to the parent product identifier.
+   */
+  variantSourceReferences?: VariantSourceReference[];
   fullName?: string;
   brand?: string;
   brandCandidates?: string[];
@@ -49,6 +55,11 @@ export interface EnrichmentResult {
   priceTaxExcluded?: number;
   description?: string;
   metaDescription?: string;
+}
+
+export interface VariantSourceReference {
+  attributeValues: string[];
+  sourceReference: string;
 }
 
 export interface CrawlResult {

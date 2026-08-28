@@ -1,0 +1,1065 @@
+{
+  "version": 1,
+  "sourceRun": "20260825-120517-matching-from-complete-scrape",
+  "reviewedAt": "2026-08-25T16:50:00+02:00",
+  "reviewMethod": "Sol high: exact live product pages inspected with Playwright and cross-checked against the immutable scrape used by the matching run.",
+  "evaluationUnit": "One exact sellable scrape row per side; a grouped product URL is resolved by the selected variant row.",
+  "pairs": [
+    {
+      "id": "conflict-01-leviathan-v2-green",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Leviathan V2 Green Edition (reference AL-A-LEVIATHAN.V2.GREEN-30ml); Eciglogistica is the non-Green Leviathan V2. Green Edition is an identity-bearing recipe edition.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Leviathan V2 Green Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-ultimate-leviathan-v2-al-4135.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001156780",
+        "sku": "2000001156780-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Ultimate Leviathan V2 Green Edition es una versión mejorada del Leviathan, una deliciosa mezcla de dulces y ácidas fresas en la que notaremos perfectamente cada matiz.Características:Botella PET de 30 mlMaceración: de 3 a 5 días, óptimo 20 díasConcentración recomendada: 13%Tapón de seguridad a prueba de niñosAroma sin sucralosa",
+        "metaDescription": "El aroma Ultimate Leviathan V2 Green Edition es una versión mejorada del Leviathan, una deliciosa mezcla de dulces y ácidas fresas en la que notaremos perfectamente cada matiz. Características:Botella PET de 30 ml Maceración: de 3 a 5 días, óptimo 20 días Concentración recomendada: 13% Tapón de seguridad a prueba de niños Aroma sin sucralosa"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Leviathan V2 Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-amp-l-ultimate-leviathan-v2-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99645040",
+        "sku": "2000001259535-30-ML",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "A&L",
+          "Aromes et liquides"
+        ],
+        "description": "A&L Ultimate Leviathan V2 Aroma 30ml A&L Ultimate Leviathan V2 Aroma. Es una versión mejorada del aroma Leviathan donde juntamos una deliciosa mezcla de fresas ácidas y dulces en la que notaremos diferentes matices por momentos con un golpe de hielo. Características: Formato: 30ml Tiempo de maceración: de 3 a 7 días Disolución: 6% Sabor: fresa, hielo Somos distribuidores oficiales de A&L. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L. Compra al por mayor A&L Ultimate Leviathan V2 Aroma  con sabor a fresa con un toque de hielo, en formato de 30ml."
+      }
+    },
+    {
+      "id": "conflict-02-phoenix-green",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Phoenix Green Edition (reference AL-A-PHOENIX.GREEN-30ml); Eciglogistica is Phoenix without that edition. The edition is identity-bearing.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Phoenix Green Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-ultimate-phoenix-al-5902.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001198780",
+        "sku": "2000001198780-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Phoenix Green Edition de la gama Ultimate de A&L se compone de una mezcla de jugosa piña tropical con un toque de limón que te enamorará.Características:Botella de 30 mlTapón a prueba de niñosDilución: 10%Maceración: 2 días mínimoAroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Phoenix Green Edition de la gama Ultimate de A&L se compone de una mezcla de jugosa piña tropical con un toque de limón que te enamorará. Características:Botella de 30 ml Tapón a prueba de niños Dilución: 10% Maceración: 2 días mínimo Aroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Phoenix Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-phoenix-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99648079",
+        "sku": "99648079",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Aromes et liquides",
+          "A&L"
+        ],
+        "description": "A&L Ultimate Phoenix Aroma 30ml A&L Ultimate Phoenix Aroma. Participe en una legendaria cabalgata junto al Phoenix, el pájaro de fuego nacido de sus cenizas bajo la égida de los especialistas de Aromas et Liquides. Pruebe un néctar helado de piña y limón en la fórmula Ultimate, ¡tan colorido como el plumaje de la criatura que lo inspiró! Características: Formato: 30ml Tiempo de maceración: de 3 a 7 días Disolución: 10% Sabor: piña, limón, hielo Somos distribuidores oficiales de Aromes et liquides. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L Ultimate Aroma Phoenix, sabor a piña y limón con un toque de hielo siguiendo la fórmula Ultimate."
+      }
+    },
+    {
+      "id": "conflict-03-shinigami-green",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Shinigami Green Edition (reference AL-A-SHINIGAMI.GREEN-30ml); Eciglogistica is the non-Green recipe.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Shinigami Green Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-ultimate-shinigami-al-5119.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001184431",
+        "sku": "2000001184431-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Shinigami Green Edition de la gama Ultimate de A&L te ofrece el sabor a la manzana más dulce que jamás probarás; irresistible como ninguna otra.Características:Botella PET de 30 mlTapón a prueba de niñosDilución: 15%Maceración: 7 díasAroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Shinigami Green Edition de la gama Ultimate de A&L te ofrece el sabor a la manzana más dulce que jamás probarás; irresistible como ninguna otra. Características:Botella PET de 30 ml Tapón a prueba de niños Dilución: 15% Maceración: 7 días Aroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Shinigami Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-shinigami-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99646473",
+        "sku": "99646473",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Aromes et liquides",
+          "A&L"
+        ],
+        "description": "A&L Ultimate Shinigami Aroma 30ml A&L Ultimate Shinigami Aroma. Prepárate para un extraño encuentro con el demonio Nippon Shinigami. Manzanas jugosas y ácidas, con algunas reminiscencias de caramelos verdes cubiertos de azúcar. Cuidado con el tsunami de frescura que puede abrumarte. Características: Formato: 30ml Tiempo de maceración: 7 días Disolución: 10% Sabor: manzana, caramelos, hielo Somos distribuidores oficiales de Aromes et liquides. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L.Ultimate Aroma Shinigami, sabor a manzana y caramelos verdes, con un toque de frescura"
+      }
+    },
+    {
+      "id": "conflict-04-shinigami-zero-green",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Shinigami Zero Green Edition; Eciglogistica is non-Green Shinigami Zero. A coincident-looking supplier code does not override an identity-bearing edition.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Shinigami Zero Green Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-shinigami-ultimate-zero-al-6375.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001213087",
+        "sku": "2000001213087-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Ultimate Shinigami Zero Green Edition de A&L es fiel a la receta original del aroma Shinigami con su sabor dulce a manzana verde con golosinas que te enamorará.Características:Botella de 30 mlTapón a prueba de niñosDilución: 10%Maceración: 21 díasAroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Ultimate Shinigami Zero Green Edition de A&L es fiel a la receta original del aroma Shinigami con su sabor dulce a manzana verde con golosinas que te enamorará. Características:Botella de 30 ml Tapón a prueba de niños Dilución: 10% Maceración: 21 días Aroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Shinigami Zero Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-shinigami-zero-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99647573",
+        "sku": "2000001213087-30-ML",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Aromes et liquides",
+          "A&L"
+        ],
+        "description": "A&L Ultimate Shinigami Zero Aroma 30ml A&L Ultimate Shinigami Zero Aroma. Prepárate para un extraño encuentro con el demonio Nippon Shinigami. Manzanas jugosas y ácidas, con algunas reminiscencias de caramelos verdes cubiertos de azúcar. Shinigami Zero tiene la misma receta que el original pero sin frescor. Características: Formato: 30ml Tiempo de maceración: de 3 a 7 días Disolución: 10% Sabor: manzana, caramelos Somos distribuidores oficiales de Aromes et liquides. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L.Ultimate Aroma Shinigami Zero sabor a manzana y caramelos verdes."
+      }
+    },
+    {
+      "id": "conflict-05-valkyrie-green",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is explicitly Valkyrie Green Edition (reference AL-A-VALKIRYE.GREEN); Eciglogistica's exact page is non-Green Valkyrie.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Valkyrie Green Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-ultimate-valkyrie-al-5120.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001184448",
+        "sku": "2000001184448-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Valkyrie Green Edition de la gama Ultimate de A&L combina la frambuesa, grosella negra, fresas y otros frutos rojos para crear un sabor altamente dulce, fesco y delicioso digno de tener en tu colección.Características:Botella PET de 30 mlTapón a prueba de niñosDilución: 15%Maceración: 7 díasAroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Valkyrie Green Edition de la gama Ultimate de A&L combina la frambuesa, grosella negra, fresas y otros frutos rojos para crear un sabor altamente dulce, fesco y delicioso digno de tener en tu colección. Características:Botella PET de 30 ml Tapón a prueba de niños Dilución: 15% Maceración: 7 días Aroma sin sucralosaAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Valkyrie Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-valkyrie-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99646472",
+        "sku": "99646472",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Aromes et liquides",
+          "A&L"
+        ],
+        "description": "A&L Ultimate Valkyrie Aroma 30ml A&L Ultimate Valkyrie Aroma. Dejate sorprender por el característico frescor de Ultimate, combinado delicadamente con frutos rojos y especialmente con una deliciosa frambuesa, que llevará tu sensación de vapeo a otro nivel. Características: Formato: 30ml Tiempo de maceración: de 3 a 7 días Disolución: 10% Sabor: frutos rojos, frambuesa Somos distribuidores oficiales de Aromes et liquides. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L.Ultimate Valkyrie Aroma, sabor a frutos rojos y frambuesas."
+      }
+    },
+    {
+      "id": "conflict-06-ivg-neon-lime-20mg",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both selected scrape rows are IVG/IVG Salt Neon Lime, 10 ml, 20 mg, 50VG/50PG, with the same flavour. The Eciglogistica URL groups 10 mg and 20 mg; its selected 20 mg row is the comparison unit.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Neon Lime 10ml - IVG Salt - 20 mg / 10 ml",
+        "url": "https://vaperalia.es/ivg-salt/neon-lime-ivg-salt-8192.html#/85-nicotina-20_mg/43-capacidad_bote-10_ml",
+        "brand": "IVG Salt",
+        "commercialBrand": "IVG Salt",
+        "reference": "2000001246450",
+        "sku": "2000001246450-20-MG-10-ML",
+        "variants": {
+          "Nicotina": "20 mg",
+          "Tamaño": "10 ml"
+        },
+        "category": "Líquidos",
+        "breadcrumbPath": [
+          "Sales de Nicotina",
+          "IVG Salt"
+        ],
+        "description": "El líquido Neon Lime de IVG Salt es ideal para los días más calurosos del año, gracias a su sabor fresco a sorbete de lima y limón.Características:Botella de 10ml de líquidoTapón con seguridad a prueba de niñosBase: 50%VG / 50%PGSales de nicotina: 10 y 20mg",
+        "metaDescription": "El líquido Neon Lime de IVG Salt es ideal para los días más calurosos del año, gracias a su sabor fresco a sorbete de lima y limón. Características:Botella de 10ml de líquido Tapón con seguridad a prueba de niños Base: 50%VG / 50%PG Sales de nicotina: 10 y 20mg"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "IVG Salts Neon Lime 10ml - 20mg",
+        "url": "https://nueva.eciglogistica.com/ivg-salts-neon-lime-10ml",
+        "brand": "IVG E-Liquids",
+        "reference": "99655848",
+        "sku": "2000001246450-20MG",
+        "variants": {
+          "MG": "20mg"
+        },
+        "category": "NICOTINE SALTS",
+        "breadcrumbPath": [
+          "NICOTINE SALTS",
+          "IVG E-Liquids"
+        ],
+        "description": "IVG Salts Neon Lime 10ml IVG Salts Neon Lime 10ml. Una mezcla de frutas ácidas con un acabado fresco. El sabor agridulce del limón y la lima se suaviza al exhalar con una calada helada. Características: Formato: 10ml Nicotina: 10mg / 20mg Proporción: 50VG / 50PG Sabor: limón, lima Somos distribuidores oficiales de IVG E-Liquids. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "IVG E-liquid marca top Reno Unido.  Neon Lime sabor a granizado de limón. Nic salts formato 10 ml con 10mg y 20mg de nicotina."
+      }
+    },
+    {
+      "id": "conflict-07-ivg-paradise-lagoon-20mg",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both selected scrape rows are IVG/IVG Salt Paradise Lagoon, 10 ml, 20 mg, 50VG/50PG, with the same pineapple/papaya/citrus profile. The grouped supplier page is resolved to its 20 mg row.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Paradise Lagoon 10ml - IVG Salt - 20 mg / 10 ml",
+        "url": "https://vaperalia.es/ivg-salt/paradise-lagoon-10ml-ivg-salt-9673.html#/85-nicotina-20_mg/43-capacidad_bote-10_ml",
+        "brand": "IVG Salt",
+        "commercialBrand": "IVG Salt",
+        "reference": "2000001264799",
+        "sku": "2000001264799-20-MG-10-ML",
+        "variants": {
+          "Nicotina": "20 mg",
+          "Tamaño": "10 ml"
+        },
+        "category": "Líquidos",
+        "breadcrumbPath": [
+          "Sales de Nicotina",
+          "IVG Salt"
+        ],
+        "description": "El líquido Paradise Lagoon de IVG Salt sabe a jugosas piñas heladas, suavemente mezcladas con trozos de papaya madura y elementos cítricos.Características:Botella de 10ml de líquidoTapón con seguridad a prueba de niñosBase: 50%VG / 50%PGSales de nicotina: 10 y 20mg",
+        "metaDescription": "El líquido Paradise Lagoon de IVG Salt sabe a jugosas piñas heladas, suavemente mezcladas con trozos de papaya madura y elementos cítricos. Características:Botella de 10ml de líquido Tapón con seguridad a prueba de niños Base: 50%VG / 50%PG Sales de nicotina: 10 y 20mg"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "IVG Salts Paradise Lagoon 10ml - 20mg",
+        "url": "https://nueva.eciglogistica.com/ivg-salts-paradise-lagoon-10ml",
+        "brand": "IVG E-Liquids",
+        "reference": "99655326",
+        "sku": "2000001264799-20MG",
+        "variants": {
+          "MG": "20mg"
+        },
+        "category": "NICOTINE SALTS",
+        "breadcrumbPath": [
+          "NICOTINE SALTS",
+          "IVG E-Liquids"
+        ],
+        "description": "IVG Salts Paradise Lagoon 10ml IVG Salts Paradise Lagoon. Prueba la piña más dulce y topical cubierta de papaya y cítricos refrescantes. Características: Formato: 10ml Nicotina: 10mg / 20mg Proporción: 50VG / 50PG Sabor: piña, papaya, citrícos, hielo Somos distribuidores oficiales de IVG E-Liquids. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de IVG. IVG Salts Paradise Lagoon, e-liquid con sales de nicotina sabor a piña, papaya y cítricos. Nic salts formato 10 ml con 10mg y 20mg de nicotina."
+      }
+    },
+    {
+      "id": "conflict-08-ursa-nano-vs-s3",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "DIFFERENT",
+      "truthBasis": "Vaperalia is the original Ursa Nano: 800 mAh and 5-18 W. Eciglogistica is Ursa Nano S3: 1600 mAh and 11-30 W. S3 is a different model/generation, not a wording variation.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Ursa Nano 800mAh - Lost Vape - Silver Carbon FIber",
+        "url": "https://vaperalia.es/lost-vape/ursa-nano-800mah-lost-vape-12439.html#/785-color-silver_carbon_fiber",
+        "brand": "Lost Vape",
+        "commercialBrand": "Lost Vape",
+        "reference": "2000001306574",
+        "sku": "2000001306574-SILVER-CARBON-FIBER",
+        "variants": {
+          "Color": "Silver Carbon FIber"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Kits Pod System",
+          "Lost Vape"
+        ],
+        "description": "El kit Ursa Nano Pod de Voopoo es una nueva continuación de la serie Ursa, que destaca por un tamaño compacto con un sensacional golpe de garganta y un sabor estable para principiantes y amantes del MTL. Incorpora una batería de 800mAh y ofrece una potencia de salida de hasta 18W.Características:Capacidad: 2mlBatería: 800mAhRango de potencia: 5-18WAjuste de flujo de aire",
+        "metaDescription": "El kit Ursa Nano Pod de Voopoo es una nueva continuación de la serie Ursa, que destaca por un tamaño compacto con un sensacional golpe de garganta y un sabor estable para principiantes y amantes del MTL. Incorpora una batería de 800mAh y ofrece una potencia de salida de hasta 18W. Características:Capacidad: 2ml Batería: 800mAh Rango de potencia: 5-18W Ajuste de flujo de aire"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Lost Vape Ursa Nano S3 Pod Kit - Silver Silk",
+        "url": "https://nueva.eciglogistica.com/lost-vape-ursa-nano-s3-pod-kit",
+        "brand": "Lost Vape",
+        "reference": "99672080",
+        "sku": "99672080-SILVER-SILK",
+        "variants": {
+          "COLOR": "Silver Silk"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "Lost Vape"
+        ],
+        "description": "Lost Vape Ursa Nano S3 Pod Kit Lost Vape Ursa Nano S3 Pod Kit con batería 1600mAh y airflow ajustable El Lost Vape Ursa Nano S3 es un pod kit compacto con batería integrada de 1600mAh y hasta 30W de potencia, diseñado para vapeo MTL y RDL con sales de nicotina. Su sistema de relleno top-fill permite recargar el cartucho de 2ml sin desmontar el equipo, con airflow ajustable para personalizar la calada entre un estilo restringido y uno más abierto. La indicación LED intuitiva ofrece en todo momento información clara sobre el nivel de batería. El Ursa Nano S3 es compatible con el cartucho Ursa V3 Replacement Pod y admite resistencias desde 0,3 hasta 2Ω, lo que amplía las opciones de vapeo según las preferencias del usuario. Descubre más dispositivos y accesorios de la marca Lost Vape. Especificaciones Técnicas: Tamaño: 25,8 x 15,2 x 117mm Peso: 47g ± 5g Capacidad: 2ml Batería: 1600mAh Rango de potencia: 11W - 30W Carga: USB-C (5V/1.6A) Material: PC / PCTG / PU Rango de resistencias: 0.3Ω - 2Ω Voltaje de batería: 3,3 - 4,2V Top fill Airflow ajustable Cartuchos compatibles: Ursa V3 Replacement Pod Indicación LED intuitivo de nivel de batería ¿Qué incluye Lost Vape Ursa Nano S3 Pod Kit? 1x Ursa Nano S3 Pod Kit 1x Ursa Replacement Pod V3 Top fill 0.8Ω 1x Guía rápida de Ursa Replacement Pod 1x Manual de usuario 1x Tarjeta de garantía Preguntas frecuentes sobre el Lost Vape Ursa Nano S3 ¿El Lost Vape Ursa Nano S3 es compatible con sales de nicotina? Sí. Su rango de resistencias de 0,3 a 2 Ω y su potencia ajustable lo hacen especialmente adecuado para el uso con sales de nicotina en calada MTL. ¿Qué cartuchos son compatibles con el Ursa Nano S3? El Ursa Nano S3 es compatible con el sistema Ursa V3 Replacement Pod, disponible en diferentes resistencias para adaptar el tipo de vapeo. ¿Cuánto tarda en cargarse el Ursa Nano S3? Utiliza carga USB-C a 5V/1,6A. Con su batería de 1600mAh, el tiempo estimado de carga completa ronda los 60–80 minutos en condiciones normales. ¿El sistema de relleno top-fill del Ursa Nano S3 es antifugas? El diseño top-fill facilita el relleno directo sin desmontar el cartucho, reduciendo el riesgo de derrames durante la carga del e-liquid. ¿Por qué elegir la marca Lost Vape? Lost Vape es una marca de referencia en el sector del vapeo de precisión, reconocida por su integración de materiales de calidad —como aleaciones metálicas y acabados en piel— con tecnología propia en sistemas de pod y mods regulados. El Ursa Nano S3 continúa la evolución de la familia Ursa, una de las líneas más consolidadas del fabricante a nivel internacional. Somos distribuidores oficiales de Lost Vape. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Lost Vape. Compra al por mayor Lost Vape Ursa Nano S3 Pod Kit: es un pod kit compacto con una batería de 1600mAh, airflow ajustable y top-fill. Compatible con Ursa Cartridge V3."
+      }
+    },
+    {
+      "id": "conflict-09-ursa-v3-pod-08",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both are Lost Vape Ursa V3 replacement pods, pack 3, 2 ml, selected at 0.8 ohm. The copy says lateral-upper fill versus top-fill, but no distinct model or edition is shown and all identity-bearing dimensions coincide.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Pod Ursa V3 2ml (3pcs) - Lost Vape - 0.8 ohm / 2 ml",
+        "url": "https://vaperalia.es/lost-vape/pod-ursa-2ml-3pcs-lost-vape-12425.html#/288-ohmios-0_8_ohm/118-capacidad_del_tanque-2_ml",
+        "brand": "Lost Vape",
+        "commercialBrand": "Lost Vape",
+        "reference": "2000001305966",
+        "sku": "2000001305966-2-ML-0-8-OHM",
+        "variants": {
+          "Ohmios": "0.8 ohm",
+          "Capacidad": "2 ml"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Pods",
+          "Lost Vape"
+        ],
+        "description": "El Pod V3 para Ursa de Lost Vape es un cartucho recargable de 2ml con orificio de entrada de e-liquid lateral superior. Dispone de un sistema antifugas que asegura su funcionamiento sin problemas y una experiencia de vapeo libre de inconvenientes.Características:2ml de capacidadPod con resistencia incorporada de 0.6ohm, 0.8ohm y 1.0ohm.Recarga lateral fácil y rápidaCompatible con los dispositivos Ursa Se vende en pack de 3 unidades.",
+        "metaDescription": "El Pod V3 para Ursa de Lost Vape es un cartucho recargable de 2ml con orificio de entrada de e-liquid lateral superior. Dispone de un sistema antifugas que asegura su funcionamiento sin problemas y una experiencia de vapeo libre de inconvenientes. Características:2ml de capacidad Pod con resistencia incorporada de 0.6ohm, 0.8ohm y 1.0ohm. Recarga lateral fácil y rápida Compatible con los dispositivos UrsaSe vende en pack de 3 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Lost Vape Ursa V3 Replacement Pod (Pack 3) - 0.8OHM",
+        "url": "https://nueva.eciglogistica.com/lost-vape-ursa-v3-replacement-pod-pack-3",
+        "brand": "Lost Vape",
+        "reference": "99669542",
+        "sku": "2000001305959-0-8OHM",
+        "variants": {
+          "OHM": "0.8OHM"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "CARTUCHOS POD SYSTEM",
+          "Lost Vape"
+        ],
+        "description": "Lost Vape Ursa V3 Replacement Pod (Pack 3) Lost Vape Ursa V3 Replacement Pod - Recarga superior, sabor impecable Ursa V3 Replacement Pod de la marca Lost Vape presenta un sistema de recarga top fill diseñado para ofrecer una experiencia de uso limpia, rápida y sin fugas. Estos cartuchos de tercera generación mejoran el sabor y la comodidad, garantizando una absorción constante del e-liquid y una lenta pérdida de sabor. Disponen de una capacidad de 2ml y con una resistencia integrada de 0.6, 0.8, 1.0 Ω, adaptándose a estilos que van desde el DTL hasta el MTL clásico, con vaporización intensa y rica en sabor. Su conexión magnética y su cierre hermético garantizan un acople seguro y evitar fugas. Vapeo limpio y seguro. Compatible con cualquier dispositivo Lost Vape de la serie Ursa. Características: Pack de 3 unidades Capacidad: 2ml Resistencias: 0.6 / 0.8 / 1.0Ω Recarga superior (top‑fill) con válvula de silicona: recarga rápida y sin derrames Conexión magnética, instalación fácil y estable Diseño anti‑fugas, gracias a sellado mejorado y sistema top‑fill Compatibles con todos los dispositivos Ursa V3, compatibles con Ursa, Ursa Nano, Ursa Baby, Ursa Cap y más ¿Por qué elegir Lost Vape? Lost Vape ha consolidado su reputación gracias a su compromiso con la innovación y la excelencia técnica. Con su tecnología E‑CORE y plataformas avanzadas como E Plus, ofrece dispositivos y componentes diseñados para optimizar la experiencia del vapeo: máxima fidelidad de sabor, facilidad de uso y seguridad. Como marca mayorista, ofrece calidad premium y fiabilidad en cada lote. Somos distribuidores oficiales de Lost Vape. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Cartucho Lost Vape Ursa V3 Replacement Pod, recarga top fill 2 ml, resistencias 0.6 ohm, 0.8ohm, 1.0 ohm, sistema anti‑fugas y magnético. Compatible con dispositivos Ursa. A la venta pack de 3 unidades."
+      }
+    },
+    {
+      "id": "conflict-10-ursa-v3-pod-10",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both are Lost Vape Ursa V3 replacement pods, pack 3, 2 ml, selected at 1.0 ohm. The fill-location wording conflict is catalog copy, not evidence of a second named model.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Pod Ursa V3 2ml (3pcs) - Lost Vape - 1.0 ohm / 2 ml",
+        "url": "https://vaperalia.es/lost-vape/pod-ursa-2ml-3pcs-lost-vape-12425.html#/112-ohmios-1_0_ohm/118-capacidad_del_tanque-2_ml",
+        "brand": "Lost Vape",
+        "commercialBrand": "Lost Vape",
+        "reference": "2000001305973",
+        "sku": "2000001305973-2-ML-1-0-OHM",
+        "variants": {
+          "Ohmios": "1.0 ohm",
+          "Capacidad": "2 ml"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Pods",
+          "Lost Vape"
+        ],
+        "description": "El Pod V3 para Ursa de Lost Vape es un cartucho recargable de 2ml con orificio de entrada de e-liquid lateral superior. Dispone de un sistema antifugas que asegura su funcionamiento sin problemas y una experiencia de vapeo libre de inconvenientes.Características:2ml de capacidadPod con resistencia incorporada de 0.6ohm, 0.8ohm y 1.0ohm.Recarga lateral fácil y rápidaCompatible con los dispositivos Ursa Se vende en pack de 3 unidades.",
+        "metaDescription": "El Pod V3 para Ursa de Lost Vape es un cartucho recargable de 2ml con orificio de entrada de e-liquid lateral superior. Dispone de un sistema antifugas que asegura su funcionamiento sin problemas y una experiencia de vapeo libre de inconvenientes. Características:2ml de capacidad Pod con resistencia incorporada de 0.6ohm, 0.8ohm y 1.0ohm. Recarga lateral fácil y rápida Compatible con los dispositivos UrsaSe vende en pack de 3 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Lost Vape Ursa V3 Replacement Pod (Pack 3) - 1.0OHM",
+        "url": "https://nueva.eciglogistica.com/lost-vape-ursa-v3-replacement-pod-pack-3",
+        "brand": "Lost Vape",
+        "reference": "99669542",
+        "sku": "2000001305959-1-0OHM",
+        "variants": {
+          "OHM": "1.0OHM"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "CARTUCHOS POD SYSTEM",
+          "Lost Vape"
+        ],
+        "description": "Lost Vape Ursa V3 Replacement Pod (Pack 3) Lost Vape Ursa V3 Replacement Pod - Recarga superior, sabor impecable Ursa V3 Replacement Pod de la marca Lost Vape presenta un sistema de recarga top fill diseñado para ofrecer una experiencia de uso limpia, rápida y sin fugas. Estos cartuchos de tercera generación mejoran el sabor y la comodidad, garantizando una absorción constante del e-liquid y una lenta pérdida de sabor. Disponen de una capacidad de 2ml y con una resistencia integrada de 0.6, 0.8, 1.0 Ω, adaptándose a estilos que van desde el DTL hasta el MTL clásico, con vaporización intensa y rica en sabor. Su conexión magnética y su cierre hermético garantizan un acople seguro y evitar fugas. Vapeo limpio y seguro. Compatible con cualquier dispositivo Lost Vape de la serie Ursa. Características: Pack de 3 unidades Capacidad: 2ml Resistencias: 0.6 / 0.8 / 1.0Ω Recarga superior (top‑fill) con válvula de silicona: recarga rápida y sin derrames Conexión magnética, instalación fácil y estable Diseño anti‑fugas, gracias a sellado mejorado y sistema top‑fill Compatibles con todos los dispositivos Ursa V3, compatibles con Ursa, Ursa Nano, Ursa Baby, Ursa Cap y más ¿Por qué elegir Lost Vape? Lost Vape ha consolidado su reputación gracias a su compromiso con la innovación y la excelencia técnica. Con su tecnología E‑CORE y plataformas avanzadas como E Plus, ofrece dispositivos y componentes diseñados para optimizar la experiencia del vapeo: máxima fidelidad de sabor, facilidad de uso y seguridad. Como marca mayorista, ofrece calidad premium y fiabilidad en cada lote. Somos distribuidores oficiales de Lost Vape. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Cartucho Lost Vape Ursa V3 Replacement Pod, recarga top fill 2 ml, resistencias 0.6 ohm, 0.8ohm, 1.0 ohm, sistema anti‑fugas y magnético. Compatible con dispositivos Ursa. A la venta pack de 3 unidades."
+      }
+    },
+    {
+      "id": "conflict-11-xros-corex2-pod-08",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both are Vaporesso Xros Series Corex 2.0 replacement pods, pack 4, 2 ml, selected at 0.8 ohm, with the same compatibility and technology.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Pod Xros Series Corex 2.0 2ml (4pcs) - Vaporesso - 0.8 ohm / 2 ml",
+        "url": "https://vaperalia.es/vaporesso/pod-xros-series-corex-20-2ml-4pcs-vaporesso-13574.html#/288-ohmios-0_8_ohm/118-capacidad_del_tanque-2_ml",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001335970",
+        "sku": "2000001335970-2-ML-0-8-OHM",
+        "variants": {
+          "Ohmios": "0.8 ohm",
+          "Capacidad": "2 ml"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Pods",
+          "Vaporesso"
+        ],
+        "description": "El Pod Xros Series Corex 2.0 de Vaporesso es un cartucho recargable y desechable para los dispositivos Xros. Su resistencia de tipo malla, asegura un calentamiento óptimo más rápido y un sabor explosivo; su algodón mejorado, extiende la vida útil de la resistencia.Características:Capacidad de 2mlResistencia 0.4ohm compatible con: Xros Pro, Xros 4 y Xros 4 MiniResistencias de 0.6, 0.8, 1.0 y 1.2ohm compatibles con toda la gama XrosSe vende en pack de 4 unidades.",
+        "metaDescription": "El Pod Xros Series Corex 2.0 de Vaporesso es un cartucho recargable y desechable para los dispositivos Xros. Su resistencia de tipo malla, asegura un calentamiento óptimo más rápido y un sabor explosivo; su algodón mejorado, extiende la vida útil de la resistencia. Características:Capacidad de 2ml Resistencia 0.4ohm compatible con: Xros Pro, Xros 4 y Xros 4 Mini Resistencias de 0.6, 0.8, 1.0 y 1.2ohm compatibles con toda la gama XrosSe vende en pack de 4 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso Xros Series Pod Replacement Corex 2.0 (Pack 4) - 0.8 Ohm",
+        "url": "https://nueva.eciglogistica.com/vaporesso-xros-series-pod-replacement-corex-2-0-pack-4",
+        "brand": "Vaporesso",
+        "reference": "99665507",
+        "sku": "2000001341957-0-8-OHM",
+        "variants": {
+          "OHM": "0.8 Ohm"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "CARTUCHOS POD SYSTEM",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso Xros Series Pod Replacement Corex 2.0 (Pack 4) Los nuevos cartuchos Vaporesso XROS Mesh Pod Corex 2.0 son unos pods de recambio de 2ml diseñados para ser compatible con toda la serie Vaporesso XROS. Este pod incorpora tecnología SSS resistente a las fugas y cuenta con un sistema de rellenado superior tipo clamshell. La boquilla ha sido diseñada con una forma más plana, optimizada para adaptarse perfectamente a los labios y proporcionar una experiencia de vapeo MTL (Mouth to Lung) más precisa. Además, el pod presenta la innovadora tecnología COREX 2.0, que utiliza un nuevo algodón más esponjoso para retener más líquido y prevenir quemaduras, extendiendo la vida útil de las resistencias. Características: Capacidad: 2ml Pack de 4 unidades Coil: 0.4ohm / 0.6ohm / 0.8ohm / 1.0ohm / 1.2ohm ** 0.4ohm solo es compatible con Xros Pro, Xros 4 y Xros 4 Mini Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "La nueva versión de los cartuchos Xros de Vaporesso son compatibles con toda la serie Vaporesso Xros. Presenta la innovadora tecnología COREX 2.0 que proporciona una experiencia de vapeo MTL más precisa, sistema SSS resistente a las fugas y rellenado Top"
+      }
+    },
+    {
+      "id": "conflict-12-xros-corex2-pod-12",
+      "set": "conflict",
+      "deterministicConfidence": null,
+      "truth": "SAME",
+      "truthBasis": "Both are Vaporesso Xros Series Corex 2.0 replacement pods, pack 4, 2 ml, selected at 1.2 ohm, with the same compatibility and technology.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Pod Xros Series Corex 2.0 2ml (4pcs) - Vaporesso - 1.2 ohm / 2 ml",
+        "url": "https://vaperalia.es/vaporesso/pod-xros-series-corex-20-2ml-4pcs-vaporesso-13574.html#/114-ohmios-1_2_ohm/118-capacidad_del_tanque-2_ml",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001345306",
+        "sku": "2000001345306-2-ML-1-2-OHM",
+        "variants": {
+          "Ohmios": "1.2 ohm",
+          "Capacidad": "2 ml"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Pods",
+          "Vaporesso"
+        ],
+        "description": "El Pod Xros Series Corex 2.0 de Vaporesso es un cartucho recargable y desechable para los dispositivos Xros. Su resistencia de tipo malla, asegura un calentamiento óptimo más rápido y un sabor explosivo; su algodón mejorado, extiende la vida útil de la resistencia.Características:Capacidad de 2mlResistencia 0.4ohm compatible con: Xros Pro, Xros 4 y Xros 4 MiniResistencias de 0.6, 0.8, 1.0 y 1.2ohm compatibles con toda la gama XrosSe vende en pack de 4 unidades.",
+        "metaDescription": "El Pod Xros Series Corex 2.0 de Vaporesso es un cartucho recargable y desechable para los dispositivos Xros. Su resistencia de tipo malla, asegura un calentamiento óptimo más rápido y un sabor explosivo; su algodón mejorado, extiende la vida útil de la resistencia. Características:Capacidad de 2ml Resistencia 0.4ohm compatible con: Xros Pro, Xros 4 y Xros 4 Mini Resistencias de 0.6, 0.8, 1.0 y 1.2ohm compatibles con toda la gama XrosSe vende en pack de 4 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso Xros Series Pod Replacement Corex 2.0 (Pack 4) - 1.2 Ohm",
+        "url": "https://nueva.eciglogistica.com/vaporesso-xros-series-pod-replacement-corex-2-0-pack-4",
+        "brand": "Vaporesso",
+        "reference": "99665507",
+        "sku": "2000001341957-1-2-OHM",
+        "variants": {
+          "OHM": "1.2 Ohm"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "CARTUCHOS POD SYSTEM",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso Xros Series Pod Replacement Corex 2.0 (Pack 4) Los nuevos cartuchos Vaporesso XROS Mesh Pod Corex 2.0 son unos pods de recambio de 2ml diseñados para ser compatible con toda la serie Vaporesso XROS. Este pod incorpora tecnología SSS resistente a las fugas y cuenta con un sistema de rellenado superior tipo clamshell. La boquilla ha sido diseñada con una forma más plana, optimizada para adaptarse perfectamente a los labios y proporcionar una experiencia de vapeo MTL (Mouth to Lung) más precisa. Además, el pod presenta la innovadora tecnología COREX 2.0, que utiliza un nuevo algodón más esponjoso para retener más líquido y prevenir quemaduras, extendiendo la vida útil de las resistencias. Características: Capacidad: 2ml Pack de 4 unidades Coil: 0.4ohm / 0.6ohm / 0.8ohm / 1.0ohm / 1.2ohm ** 0.4ohm solo es compatible con Xros Pro, Xros 4 y Xros 4 Mini Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "La nueva versión de los cartuchos Xros de Vaporesso son compatibles con toda la serie Vaporesso Xros. Presenta la innovadora tecnología COREX 2.0 que proporciona una experiencia de vapeo MTL más precisa, sistema SSS resistente a las fugas y rellenado Top"
+      }
+    },
+    {
+      "id": "control-01-succube-v2-sweet",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same A&L Ultimate Succube V2 Sweet Edition aroma, 30 ml. The Vaperalia title and technical reference say Sweet Edition; one sentence incorrectly says Green Edition and is treated as an isolated copy error.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Ultimate Succube V2 Sweet Edition 30ml - A&L - 30 ml",
+        "url": "https://vaperalia.es/al/aroma-ultimate-succube-al-5003.html#/45-capacidad_bote-30_ml",
+        "brand": "A&L",
+        "commercialBrand": "A&L",
+        "reference": "2000001181997",
+        "sku": "2000001181997-30-ML",
+        "variants": {
+          "Tamaño": "30 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "Francia",
+          "A&L"
+        ],
+        "description": "El aroma Ultimate Succube Green Edition V2 de A&L trae un jugoso y sabroso néctar de frambuesa y sandía, con virutas de piel de limón y un toque de frescor; una mezcla tan peculiar como exquisita que no podrás dejar de vapear.Características:Envase: botella PET de 30 mlTapón a prueba de niñosDilución: 15%Maceración: 15-20 díasAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Ultimate Succube Green Edition V2 de A&L trae un jugoso y sabroso néctar de frambuesa y sandía, con virutas de piel de limón y un toque de frescor; una mezcla tan peculiar como exquisita que no podrás dejar de vapear. Características:Envase: botella PET de 30 ml Tapón a prueba de niños Dilución: 15% Maceración: 15-20 díasAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "A&L Ultimate Succube V2 Sweet Edition Aroma 30ml",
+        "url": "https://nueva.eciglogistica.com/a-e-l-ultimate-succube-v2-sweet-edition-aroma-30ml",
+        "brand": "Aromes et liquides",
+        "commercialBrand": "A&L",
+        "reference": "99653787",
+        "sku": "2000001181997-30-ML",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Aromes et liquides",
+          "A&L"
+        ],
+        "description": "A&L Ultimate Sweet Edition Succube V2 Aroma 30ml A&L Ultimate Sweet Edition Succube V2 Aroma. Es una versión mejorada del original Succube. El Succube V2 es un sabroso y fresco cóctel de sandía roja y cascara de limón, acabado con un remolino de frescura. Ahora disponible la versión Sweet Edition. Características: Formato: 30ml Tiempo de maceración: de 7 a 10 días Disolución: 6% Sabor: sandía, limón, hielo Somos distribuidores oficiales de Aromes et liquides. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de A&L Ultimate Aroma Sweet Edition Succube V2. sabor a cocktail de sandía y limón. Frescura asegurada."
+      }
+    },
+    {
+      "id": "control-02-delirio-longfill",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Alquimia Para Vapers Delirio Longfill: 20 ml aroma in a 120 ml bottle and the same distinctive flavour profile.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Delirio 20ml/120 (Longfill) - Alquimia para Vapers - 20ml en bote de 120ml",
+        "url": "https://vaperalia.es/alquimia-para-vapers/aroma-delirio-20ml120-longfill-alquimia-para-vapers-14728.html#/1592-capacidad_bote-20ml_en_bote_de_120ml",
+        "brand": "Alquimia para Vapers",
+        "commercialBrand": "Alquimia para Vapers",
+        "reference": "2000001362549",
+        "sku": "2000001362549-20ML-EN-BOTE-DE-120ML",
+        "variants": {
+          "Tamaño": "20ml en bote de 120ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "España",
+          "Alquimia Para Vapers"
+        ],
+        "description": "El aroma Delirio de Alquimia para Vapers en formato Longfill, es una mezcla única de tabacos rubios, vainillas, galletas, chocolate negro, yogurt edulcorado con nata, toques de batido de plátano con moka y caramelo tostado, con un ingrediente secreto.Características:Botella de 120ml con 20ml de aromaTapón a prueba de niñosDilución: 17%Advertencia: este producto es un aroma y debe diluirse.",
+        "metaDescription": "El aroma Delirio de Alquimia para Vapers en formato Longfill, es una mezcla única de tabacos rubios, vainillas, galletas, chocolate negro, yogurt edulcorado con nata, toques de batido de plátano con moka y caramelo tostado, con un ingrediente secreto. Características:Botella de 120ml con 20ml de aroma Tapón a prueba de niños Dilución: 17%Advertencia: este producto es un aroma y debe diluirse."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Alquimia Para Vapers Delirio Longfill 20ml",
+        "url": "https://nueva.eciglogistica.com/alquimia-para-vapers-delirio-longfill-20ml",
+        "brand": "Alquimia Para Vapers",
+        "reference": "99667421",
+        "sku": "99667421",
+        "variants": {},
+        "category": "LÍQUIDOS",
+        "breadcrumbPath": [
+          "LÍQUIDOS",
+          "AROMAS",
+          "Alquimia Para Vapers"
+        ],
+        "description": "Alquimia Para Vapers Delirio Longfill 20ml Alquimia Para Vapers Delirio Longfill 20ml - Sabor maravilloso en cada calada Alquimia Para Vapers Delirio Longfill 20ml. Este e-liquid es una mezcla de aroma a tabaco rubio, vainilla, chocolate negro, galleta, yogurt y nata. Además han agregado toques de batido de plátano con moka y caramelo tostado, sin olvidar el famoso ingrediente secreto que pone la guinda a este delirante sabor cargado de matices. Este producto viene en una botella de 120ml que contiene 20ml de aroma concentrado, dejando espacio para que personalices tu experiencia añadiendo una base y nicokits según la preferencia. Características: Porcentaje: 100%PG Formato: 20ml Capacidad de bote: 120ml Tiempo de maceración: de 15 a 20 días Sabor: Tabaco rubio, vainilla, chocolate negro, galleta, yogurt, nata, batido de plátano con moka, caramelo tostado Sin nicotina ¿Por qué elegir Alquimia Para Vapers Tormento 20ml? Alquimia para Vapers es una marca española que se ha ganado un lugar destacado entre los amantes del vapeo por su dedicación a crear aromas y bases de altísima calidad. Con una elaboración cuidadosa y materias primas seleccionadas, ofrece sabores intensos y equilibrados. Ideal para quienes buscan una experiencia de vapeo a medida, su línea de productos longfill permite a los usuarios personalizar completamente su experiencia de vapeo, eligiendo la concentración de nicotina y la proporción de PG/VG que mejor se adapte a sus necesidades. Este formato ofrece una preparación sencilla, permitiendo disfrutar de una experiencia de vapeo fresca y personalizada. ¿Cómo funciona? Somos distribuidores oficiales de Alquimia Para Vapers. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Alquimia Para Vapers Delirio Longfill 20ml. Este e-liquid es una mezcla con aroma a tabaco rubio, vainilla,  chocolate negro, galleta, yogurt y nata. Además han agregado toques de batido de plátano con moka y caramelo tostado, y  e"
+      }
+    },
+    {
+      "id": "control-03-apple-sours-longfill",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Dinner Lady Apple Sours Longfill: 14 ml aroma in a 60 ml bottle, same product and flavour.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Apple Sours 14ml/60 (Longfill) - Dinner Lady - 14ml en bote de 60ml",
+        "url": "https://vaperalia.es/dinner-lady/aroma-apple-sours-14ml60-longfill-dinner-lady-15149.html#/1680-capacidad_bote-14ml_en_bote_de_60ml",
+        "brand": "Dinner Lady",
+        "commercialBrand": "Dinner Lady",
+        "reference": "2000001372449",
+        "sku": "2000001372449-14ML-EN-BOTE-DE-60ML",
+        "variants": {
+          "Tamaño": "14ml en bote de 60ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas Longfill",
+          "Reino Unido",
+          "Dinner Lady"
+        ],
+        "description": "El aroma Apple Sours de Dinner Lady en formato Longfill, propone una mezcla agridulce con el sabor más intenso y delicioso a manzana.Características:Botella de 60ml con 14ml de aromaTapón a prueba de niñosDilución: 23.34%Advertencia: este producto es un aroma y debe diluirse.",
+        "metaDescription": "El aroma Apple Sours de Dinner Lady en formato Longfill, propone una mezcla agridulce con el sabor más intenso y delicioso a manzana. Características:Botella de 60ml con 14ml de aroma Tapón a prueba de niños Dilución: 23.34%Advertencia: este producto es un aroma y debe diluirse."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Dinner Lady Apple Sours Longfill 14ml",
+        "url": "https://nueva.eciglogistica.com/dinner-lady-apple-sours-longfill-14ml",
+        "brand": "Dinner Lady",
+        "reference": "99669469",
+        "sku": "2000001347416",
+        "variants": {},
+        "category": "AROMAS",
+        "breadcrumbPath": [
+          "DIY",
+          "AROMAS",
+          "Dinner Lady"
+        ],
+        "description": "Dinner Lady Apple Sours Longfill 14ml Dinner Lady Apple Sours Longfill - Un Toque Fresco de Manzana Caramelizada Dinner Lady Apple Sours Longfill 14ml. Revive tu infancia con esta mezcla ácida y refrescante. Dinner Lady Apple Sours es una chispa vibrante de las manzanas verdes y dulces que deja una sensación revitalizante en cada calada. Características: Proporción: 100%PG Formato: 14ml Capacidad del bote: 60ml Maceración: 2 a 5 días Sabor: manzana verde Sin nicotina ¿Por qué elegir Dinner Lady? Dinner Lady es una marca británica reconocida mundialmente por la calidad de sus sabores y su compromiso con la excelencia. Sus aromas Longfill de 14ml están formulados con ingredientes premium y diseñados para ofrecer una experiencia de vapeo intensa y duradera. Ideal para vapeadores exigentes y tiendas que buscan ofrecer lo mejor del mercado. Somos distribuidores oficiales de Dinner Lady. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Compra Dinner Lady Apple Sours Longfill 14 ml al por mayor. Una combinación dulce de manzanas verdes.  Aromas concentrados premium ideal para tiendas especializadas y distribuidores de e-liquids."
+      }
+    },
+    {
+      "id": "control-04-caliburn-g-coil-08",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Uwell Caliburn G coil, pack 4, selected at 0.8 ohm, with matching device compatibility.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Resistencia Caliburn G Coil (4pcs) - Uwell - 0.8 ohm",
+        "url": "https://vaperalia.es/uwell/resistencia-caliburn-g-coil-4pcs-uwell-9034.html#/288-ohmios-0_8_ohm",
+        "brand": "Uwell",
+        "commercialBrand": "Uwell",
+        "reference": "2000001256824",
+        "sku": "2000001256824-0-8-OHM",
+        "variants": {
+          "Ohmios": "0.8 ohm"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Resistencias para Pods",
+          "Uwell"
+        ],
+        "description": "La resistencia Caliburn G Coil de Uwell es una resistencia compatible con dispositivos Uwell, optimizada para un uso más duradero, un calentamiento más uniforme y una producción de un sabor más intensa y real.Características:Resistencia de 0.8ohm y 1.0ohmMejor sabor a 13-18W para la resistencia de 0.8 ohm y 10-15W para la resistencia de 1.0 ohm Compatible con el dispositivo Caliburn G, y Koko PrimeSe vende en pack de 4 unidades.",
+        "metaDescription": "La resistencia Caliburn G Coil de Uwell es una resistencia compatible con dispositivos Uwell, optimizada para un uso más duradero, un calentamiento más uniforme y una producción de un sabor más intensa y real. Características:Resistencia de 0.8ohm y 1.0ohm Mejor sabor a 13-18W para la resistencia de 0.8 ohm y 10-15W para la resistencia de 1.0 ohm  Compatible con el dispositivo Caliburn G, y Koko PrimeSe vende en pack de 4 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Uwell Caliburn G Coil (Pack 4) - 0.8ohm",
+        "url": "https://nueva.eciglogistica.com/uwell-caliburn-g-coil-pack-4",
+        "brand": "Uwell",
+        "reference": "99653757",
+        "sku": "2000001256817-0-8OHM",
+        "variants": {
+          "RESISTENCIA": "0.8ohm"
+        },
+        "category": "COILS",
+        "breadcrumbPath": [
+          "COILS",
+          "CONSUMIBLES",
+          "Uwell"
+        ],
+        "description": "Uwell Caliburn G Coil (Pack 4) Resistencia de recambio para Uwell Caliburn G Kit, Uwell Caliburn G2 Kit y Uwell Koko Prime Kit. Características: UN2 Meshed-H de 0.8ohm diseñada para funcionar entre 13w a 18w. FeCrAl de 1.2ohm diseñada para funcionar entre 10w a 15w. FeCrAl de 1.0ohm diseñada para funcionar entre 10w a 16w. Somos distribuidores oficiales de Uwell. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Las resistencia Uwell Caliburn G Coil son coils compatibles con Uwell Caliburn G Kit, con el nuevo Uwell Caliburn G2 Kit y también con Uwell Koko Prime Kit. Pack de 4 unidades."
+      }
+    },
+    {
+      "id": "control-05-crown-x-coil-03",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Uwell Crown X coil, pack 4, selected at 0.3 ohm.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Resistencia Crown X (4pcs) - Uwell - 0.3 ohm",
+        "url": "https://vaperalia.es/uwell/resistencia-crown-x-4pcs-uwell-13048.html#/287-ohmios-0_3_ohm",
+        "brand": "Uwell",
+        "commercialBrand": "Uwell",
+        "reference": "2000001322390",
+        "sku": "2000001322390-0-3-OHM",
+        "variants": {
+          "Ohmios": "0.3 ohm"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Resistencias para Pods",
+          "Uwell"
+        ],
+        "description": "La resistencia Crown X de Uwell sirve de repuesto para el atomizador Crown X. Ofrece muy buen rendimiento y un sabor igual al de los líquidos. Además, tiene un 66% más de vida útil en comparación con las resistencias normales para un uso más duradero.Características:Resistencia de 0.3ohm y 0.6ohmEquilibrio entre sabor y vaporPrecio por pack de 4 resistencias.",
+        "metaDescription": "La resistencia Crown X de Uwell sirve de repuesto para el atomizador Crown X. Ofrece muy buen rendimiento y un sabor igual al de los líquidos. Además, tiene un 66% más de vida útil en comparación con las resistencias normales para un uso más duradero. Características:Resistencia de 0.3ohm y 0.6ohm Equilibrio entre sabor y vaporPrecio por pack de 4 resistencias."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Uwell Crown X Coil (Pack 4) - 0.3OHM",
+        "url": "https://nueva.eciglogistica.com/uwell-crown-x-coil-pack-4",
+        "brand": "Uwell",
+        "reference": "99664242",
+        "sku": "2000001322314-0-3OHM",
+        "variants": {
+          "RESISTENCIA": "0.3OHM"
+        },
+        "category": "COILS",
+        "breadcrumbPath": [
+          "COILS",
+          "CONSUMIBLES",
+          "Uwell"
+        ],
+        "description": "Uwell Crown X Coil (Pack 4) Resistencias de recambio para Uwell Crown X Pod Kit 0.3ohm FeCrAl Mesh UWELL CROWN Coil 0.6ohm FeCrAl Mesh UWELL CROWN Coil Somos distribuidores oficiales de Uwell. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Uwell. Coil de repuesto para Uwell Crown X Pod Kit"
+      }
+    },
+    {
+      "id": "control-06-gti-dual-mesh-02",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso GTi Dual Mesh coil, pack 5, selected at 0.2 ohm.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Resistencia GTi Dual Mesh (5pcs) - Vaporesso - 0.2 ohm",
+        "url": "https://vaperalia.es/vaporesso/resistencia-gti-dual-mesh-5pcs-vaporesso-15234.html#/291-ohmios-0_2_ohm",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001374917",
+        "sku": "2000001374917-0-2-OHM",
+        "variants": {
+          "Ohmios": "0.2 ohm"
+        },
+        "category": "Resistencias",
+        "breadcrumbPath": [
+          "Resistencias",
+          "Resistencias Comerciales",
+          "Vaporesso"
+        ],
+        "description": "La resistencia GTi Dual Mesh de Vaporesso es una resistencia de recambio para el claromizador iTank T. Se trata de una resistencia diseñada para revolucionar el vapeo DTL que ofrece un sabor intenso.Características:Resistencia de 0.2 y 0.4 ohmSabor óptimo para 0.2ohm 60-70W, para 0.4ohm 50-60WOfrece un sabor puroCompatibles con el iTankSe vende en pack de 5 unidades.",
+        "metaDescription": "La resistencia GTi Dual Mesh de Vaporesso es una resistencia de recambio para el claromizador iTank T. Se trata de una resistencia diseñada para revolucionar el vapeo DTL que ofrece un sabor intenso. Características:Resistencia de 0.2 y 0.4 ohm Sabor óptimo para 0.2ohm 60-70W, para 0.4ohm 50-60W Ofrece un sabor puro Compatibles con el iTankSe vende en pack de 5 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso GTi Dual Mesh Coil (Pack 5) - 0.2ohm",
+        "url": "https://nueva.eciglogistica.com/vaporesso-gti-dual-mesh-coil-pack-5",
+        "brand": "Vaporesso",
+        "reference": "99670369",
+        "sku": "2000001374917-0-2-OHM",
+        "variants": {
+          "RESISTENCIA": "0.2ohm"
+        },
+        "category": "COILS",
+        "breadcrumbPath": [
+          "COILS",
+          "CONSUMIBLES",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso GTi Dual Mesh Coil Vaporesso GTi Dual Mesh Coil (Pack 5) Las resistencias GTi Dual Mesh están diseñadas para ofrecer un sabor más intenso y duradero, gracias a su malla de doble capa la durabilidad de la coil aumenta hast un 30%. Su estructura garantiza un calentamiento uniforme del e-liquid, reduce fugas y mejora la estabilidad de cada calada, convirtiéndose en una de las mejores resistencias para vapeo DTL y una opicón ideal para quienes buscan coils de larga duración y alto rendimiento en dispositivos avanzados. Descubre todos los dispositivos y accesorios Vaporesso y encuentra el modelo perfecto para tu negocio. Caracteristicas: GTi Dual Mesh Coil 0.2ohm (60-75W) GTi Dual Mesh Coil 0.4ohm (50-60W) Compatible con iTank, iTank 2, iTank T, iTank T (Versión Dual Mesh) Compatible con Target 80, Target 100, Target 200, Gen 80 S, Gen 200, Gen Max, Gen SE, Armour Max, Armour S, Armour Ultra ¿Por qué elegir la marca Vaporesso? Vaporesso destaca por su innovación constante, combinando tecnología avanzada, materiales resistentes y un diseño orientado al rendimiento, lo que garantiza dispositivos fiables, potentes y preparados para el día a día. Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Eciglogística, dristribuidor oficial de Vaporesso, marca top en China. Venta al por mayor de resistencias Vaporesso GTi Dual Mesh Coil. Compatible con iTank, iTank 2, iTank T, iTank T (Versión Dual Mesh)."
+      }
+    },
+    {
+      "id": "control-07-itank2-glass-8ml",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso iTank 2 replacement glass, selected at 8 ml. The Eciglogistica page groups 2 ml and 8 ml; the selected scrape row is 8 ml.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Depósito de Pyrex para iTank 2 8ml - Vaporesso - 8 ml",
+        "url": "https://vaperalia.es/depositos-de-pyrex-y-acero/deposito-de-pyrex-para-itank-2-8ml-vaporesso-13340.html#/1061-capacidad_del_tanque-8_ml",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001330166",
+        "sku": "2000001330166-8-ML",
+        "variants": {
+          "Capacidad": "8 ml"
+        },
+        "category": "Accesorios y Repuestos",
+        "breadcrumbPath": [
+          "Accesorios y Repuestos",
+          "Depósitos de Pyrex y Acero"
+        ],
+        "description": "El depósito de Pyrex para iTank 2 de Vaporesso es un depósito adicional diseñado para resistir eficazmente al calor producido por las resistencias y los impactos, sin alterar en absoluto los sabores.Características:Capacidad: 8mlAlta resistencia al calorColor transparenteFácil limpieza y mantenimiento",
+        "metaDescription": "El depósito de Pyrex para iTank 2 de Vaporesso es un depósito adicional diseñado para resistir eficazmente al calor producido por las resistencias y los impactos, sin alterar en absoluto los sabores. Características:Capacidad: 8ml Alta resistencia al calor Color transparente Fácil limpieza y mantenimiento"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso iTank 2 Glass - 8ml",
+        "url": "https://nueva.eciglogistica.com/vaporesso-itank-2-glass",
+        "brand": "Vaporesso",
+        "reference": "99656888",
+        "sku": "2000001330166-8ML",
+        "variants": {
+          "ML": "8ml"
+        },
+        "category": "ATOMIZADORES",
+        "breadcrumbPath": [
+          "ATOMIZADORES",
+          "CLAROMIZADORES",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso iTank 2 Glass Vaporesso iTank 2 Glass. Este tubo de vidrio de repuesto para el Vaporesso Gen 80S (iTank 2) Pod Kit es un accesorio esencial y de gran calidad. Fabricado con Pyrex, garantiza durabilidad y facilidad de limpieza. En caso de que tu dispositivo sufra daños en la carcasa original, este reemplazo es una elección excelente para mantener una experiencia de vapeo sin contratiempos. Características: Material: Pyrex Capacidad: 2ml y 8ml Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Vaporesso. Vaporesso iTank 2 Glass 8ml es el nuevo tanque de Vaporesso Gen 80S Pod Kit. Capacidad de 8ml."
+      }
+    },
+    {
+      "id": "control-08-itank-t-dual-mesh-silver",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso iTank T Dual Mesh, 2 ml, selected in silver. The supplier title omits Dual Mesh but its page explicitly states that technology.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "iTank T Dual Mesh 2ml - Vaporesso - Silver",
+        "url": "https://vaperalia.es/vaporesso/itank-t-dual-mesh-2ml-vaporesso-15233.html#/432-color-silver",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001374870",
+        "sku": "2000001374870-SILVER",
+        "variants": {
+          "Color": "Silver"
+        },
+        "category": "Atomizadores",
+        "breadcrumbPath": [
+          "Atomizadores",
+          "Organizados por Marca",
+          "Vaporesso"
+        ],
+        "description": "El atomizador iTank T Dual Mesh de Vaporesso ecuenta con un rendimiento optimizado gracias a su sistema de flujo de aire superior a prueba de fugas y al uso de resistencias de malla GTi, lo que permite disfrutar de sabores más deliciosos con una vida útil más larga. Además, gracias a su sistema de doble malla Dual Mesh, podrás disfrutar de un sabor más duradero.Características:2ml de capacidadFlujo de aire superiorSistema antifugasDual MeshResistencias GTi",
+        "metaDescription": "El atomizador iTank T Dual Mesh de Vaporesso ecuenta con un rendimiento optimizado gracias a su sistema de flujo de aire superior a prueba de fugas y al uso de resistencias de malla GTi, lo que permite disfrutar de sabores más deliciosos con una vida útil más larga. Además, gracias a su sistema de doble malla Dual Mesh, podrás disfrutar de un sabor más duradero. Características:2ml de capacidad Flujo de aire superior Sistema antifugas Dual Mesh Resistencias GTi"
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso iTank T 2ml - SILVER",
+        "url": "https://nueva.eciglogistica.com/vaporesso-itank-t-2ml-dual-mesh",
+        "brand": "Vaporesso",
+        "reference": "99665543",
+        "sku": "2000001338193-SILVER",
+        "variants": {
+          "COLOR": "SILVER"
+        },
+        "category": "ATOMIZADORES",
+        "breadcrumbPath": [
+          "ATOMIZADORES",
+          "CLAROMIZADORES",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso iTank T 2ml El Vaporesso iTank T presenta el esperado sistema de Top Fill. El flujo de aire directo desde la parte superior, junto con el flujo de aire de arriba hacia abajo, asegura una experiencia de vapeo satisfactoria al mismo tiempo que mejora significativamente la resistencia a las fugas. Además, el iTank T incorpora un sistema de Top Airflow escalado con precisión, que te permite ajustar el flujo de aire con precisión. Esta característica te permite personalizar tu experiencia de vapeo según tus preferencias exactas. Facilita el proceso de recarga desde la parte superior con una sola mano, gracias a su diseño deslizable. El sistema de auto-circulación de líquido en el iTank T recoge la condensación para revaporizarla y reducir las fugas en la parte inferior. Descubre la comodidad y la innovación del iTank T, diseñado para proporcionar una experiencia de vapeo satisfactoria con características avanzadas que mejoran la facilidad de uso y la calidad del vapeo Características: Capacidad: 2ml Top Airflow Compatible con GTi Coils Duración y Sabor intenso Slide y Top Fill Tecnología Dual Mesh Coil GTi 0.2ohm Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Vaporesso. Vaporesso iTank T es el nuevo tanque Dual Mesh de Vaporesso para los mod Target. Capacidad de 2ml."
+      }
+    },
+    {
+      "id": "control-09-luxe-x-corex2-pod-03",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Vaporesso Luxe X Series Corex 2.0 pod, pack 2, 2 ml, selected at 0.3 ohm.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Pod Luxe X Series Corex 2.0 2ml (2pcs) - Vaporesso - 0.3 ohm / 2 ml",
+        "url": "https://vaperalia.es/vaporesso/pod-luxe-x-series-corex-20-2ml-2pcs-vaporesso-13287.html#/287-ohmios-0_3_ohm/118-capacidad_del_tanque-2_ml",
+        "brand": "Vaporesso",
+        "commercialBrand": "Vaporesso",
+        "reference": "2000001343265",
+        "sku": "2000001343265-2-ML-0-3-OHM",
+        "variants": {
+          "Ohmios": "0.3 ohm",
+          "Capacidad": "2 ml"
+        },
+        "category": "Pod System",
+        "breadcrumbPath": [
+          "Pod System",
+          "Pods",
+          "Vaporesso"
+        ],
+        "description": "El Pod Luxe X Series de Vaporesso es un cartucho recargable y desechable, que destaca por su tecnología Corex 2.0 y su boquilla más fina ideal para un vapeo MTL. Está diseñado en formato todo en uno, ya que integra la resistencia para un vapeo fácil y cómodo. Características:Una capacidad de 2mlCartucho recargable y desechableResistencia integrada de 0.3, 0.4, 0.6 y 0.8 ohmCompatible con dispositivos Luxe X de VaporessoSe vende en pack de 2 unidades.",
+        "metaDescription": "El Pod Luxe X Series de Vaporesso es un cartucho recargable y desechable, que destaca por su tecnología Corex 2.0 y su boquilla más fina ideal para un vapeo MTL. Está diseñado en formato todo en uno, ya que integra la resistencia para un vapeo fácil y cómodo.  Características:Una capacidad de 2ml Cartucho recargable y desechable Resistencia integrada de 0.3, 0.4, 0.6 y 0.8 ohm Compatible con dispositivos Luxe X de VaporessoSe vende en pack de 2 unidades."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Vaporesso Luxe X Pod Replacement (Pack 2) - 0.3ohm Corex 2.0",
+        "url": "https://nueva.eciglogistica.com/vaporesso-luxe-x-replacement-pod-2ml-corex-2.0-pack-2",
+        "brand": "Vaporesso",
+        "reference": "99665270",
+        "sku": "2000001303450-0-3OHM-COREX-2-0",
+        "variants": {
+          "RESISTENCIA": "0.3ohm Corex 2.0"
+        },
+        "category": "POD SYSTEMS",
+        "breadcrumbPath": [
+          "POD SYSTEMS",
+          "CARTUCHOS POD SYSTEM",
+          "Vaporesso"
+        ],
+        "description": "Vaporesso Luxe X Pod Replacement (Pack 2) Cartucho de recambio para la gama Vaporesso Luxe X. Con capacidad de 2ml y tecnología de calentamiento COREX, aplicada con Morph-MESH y Cumulus Cotton, garantiza un calentamiento rápido y uniforme, y proporciona un sabor sorprendentemente intenso y nubes más densas. Se vende en pack de 2 unidades. Características: Capacidad: 2ml Resistencia: 0.3ohm Corex 2.0 / 0.4ohm Corex 2.0 / 0.4ohm Dual Mesh / 0.6ohm Dual Mesh / 0.6ohm Corex 2.0 / 0.8ohm Corex 2.0 Pack de 2 unidades Compatible con: Vaporesso Luxe X Pod Kit / Vaporesso Luxe X Pro Pod Kit / Vaporesso Luxe X2 Pod Kit / Vaporesso Luxe XR Pod Kit / Vaporesso Luxe XR Max Pod Kit / Vaporesso Luxe XR Max 2 Pod Kit / Vaporesso Luxe X3 Pod Kit Somos distribuidores oficiales de Vaporesso. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Venta al por mayor de Vaporesso. Comprar cartuchos de recambio  de 0.3, 0.4, 0.6 y 0.8 ohm para el Vaporesso Luxe X Pod Kit. Compatible con GTX Coil. Compatible con  Luxe X, Luxe X Pro, Luxe X2, Luxe XR, Luxe XR Max, Luxe XR Max 2 y Luxe X3. Pack de 2 uni"
+      }
+    },
+    {
+      "id": "control-10-tormento-aroma-10ml",
+      "set": "deterministic_positive_control",
+      "deterministicConfidence": {
+        "match": 1,
+        "base": 1,
+        "variant": 1
+      },
+      "truth": "SAME",
+      "truthBasis": "Same Alquimia Para Vapers Tormento concentrated aroma, 10 ml, with the same distinctive tobacco/vanilla/cream/nuts/coconut/chocolate profile.",
+      "a": {
+        "distributor": "Vaperalia",
+        "name": "Aroma Tormento 10ml - Alquimia para Vapers - 10 ml",
+        "url": "https://vaperalia.es/alquimia-para-vapers/aroma-tormento-10ml-alquimia-para-vapers-14725.html#/43-capacidad_bote-10_ml",
+        "brand": "Alquimia para Vapers",
+        "commercialBrand": "Alquimia para Vapers",
+        "reference": "2000001362495",
+        "sku": "2000001362495-10-ML",
+        "variants": {
+          "Tamaño": "10 ml"
+        },
+        "category": "Alquimia",
+        "breadcrumbPath": [
+          "Alquimia",
+          "Aromas",
+          "España",
+          "Alquimia Para Vapers"
+        ],
+        "description": "El aroma Tormento de Alquimia para Vapers es una mezcla única de tabacos rubios, vainillas, galletas, chocolate negro, yogurt edulcorado con nata, toques de batido de plátano con moka y caramelo tostado, con un ingrediente secreto.Características:Botella con 10ml de aromaTapón a prueba de niñosDilución: 15%Maceración: 10 díasAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia.",
+        "metaDescription": "El aroma Tormento de Alquimia para Vapers es una mezcla única de tabacos rubios, vainillas, galletas, chocolate negro, yogurt edulcorado con nata, toques de batido de plátano con moka y caramelo tostado, con un ingrediente secreto. Características:Botella con 10ml de aroma Tapón a prueba de niños Dilución: 15% Maceración: 10 díasAdvertencia: este producto es un aroma y debe diluirse con PG, VG o VPG según sea su preferencia."
+      },
+      "b": {
+        "distributor": "Eciglogistica",
+        "name": "Alquimia Para Vapers Aroma Tormento 10ml",
+        "url": "https://nueva.eciglogistica.com/alquimia-para-vapers-aroma-tormento-10ml",
+        "brand": "Alquimia Para Vapers",
+        "reference": "99669623",
+        "sku": "2000001362495-10-ML",
+        "variants": {},
+        "category": "ALQUIMIA",
+        "breadcrumbPath": [
+          "ALQUIMIA",
+          "AROMAS",
+          "Alquimia Para Vapers"
+        ],
+        "description": "Alquimia Para Vapers Aroma Tormento 10ml Alquimia Para Vapers Aroma Tormento. Este e-liquid tiene un aroma a tabaco dulce con notas de vainilla, crema de leche, y un pequeño toque de frutos secos tostados. Además de coco y chocolate, incluye un ingrediente secreto que le dota de una personalidad especial. Características: Formato: 10ml Tiempo de maceración: de 15 a 20 días Disolución: 10-15% Sabor: tabaco, vainilla, crema de leche, frutos secos, coco, chocolate ¿Por qué elegir Alquimia Para Vapers Tormento 20ml? Alquimia para Vapers es una marca española que se ha ganado un lugar destacado entre los amantes del vapeo por su dedicación a crear aromas y bases de altísima calidad. Con una elaboración cuidadosa y materias primas seleccionadas, ofrece sabores intensos y equilibrados. Ideal para quienes buscan una experiencia de vapeo a medida, su línea de productos longfill permite a los usuarios personalizar completamente su experiencia de vapeo, eligiendo la concentración de nicotina y la proporción de PG/VG que mejor se adapte a sus necesidades. Este formato ofrece una preparación sencilla, permitiendo disfrutar de una experiencia de vapeo fresca y personalizada. Somos distribuidores oficiales de Alquimia Para Vapers. Eciglogistica es tu distribuidor de Cigarrillos Electrónicos, e-Liquídos y Accesorios para el vapeo. Nota informativa: Todos nuestros productos son distribuidos desde España y conforme a la regulación TPD.",
+        "metaDescription": "Distribuidor oficial de Alquimia para Vapers. Aroma Tormento 10ml, sabor a tabaco de vainilla, frutos secos, coco y chocolate, ahora con un ingrediente secreto."
+      }
+    }
+  ]
+}

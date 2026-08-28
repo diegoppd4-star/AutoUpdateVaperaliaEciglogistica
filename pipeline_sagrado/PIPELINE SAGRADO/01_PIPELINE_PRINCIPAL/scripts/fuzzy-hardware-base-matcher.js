@@ -382,10 +382,34 @@ function versionTokens(tokens) {
   return new Set(tokens.filter((token) => /^v\d+[a-z]?$/.test(token)));
 }
 
+const MODEL_QUALIFIERS = new Set([
+  "koko",
+  "legend",
+  "lite",
+  "max",
+  "mini",
+  "nano",
+  "plus",
+  "primal",
+  "pro",
+]);
+
+function modelQualifierTokens(tokens) {
+  return new Set(tokens.filter((token) => MODEL_QUALIFIERS.has(token) || /^s\d+[a-z]?$/.test(token)));
+}
+
+function setsEqual(left, right) {
+  return left.size === right.size && [...left].every((value) => right.has(value));
+}
+
 function hasVersionConflict(aTokens, bTokens) {
   const aVersions = versionTokens(aTokens);
   const bVersions = versionTokens(bTokens);
-  return hasConflict(aVersions, bVersions);
+  return !setsEqual(aVersions, bVersions);
+}
+
+function hasModelQualifierConflict(aTokens, bTokens) {
+  return !setsEqual(modelQualifierTokens(aTokens), modelQualifierTokens(bTokens));
 }
 
 function hasDirectionalConflict(aTokens, bTokens) {
@@ -436,16 +460,17 @@ function scorePair(aRow, bRow, args) {
     return { score: 0, reason: `pack distinto A=${[...aPacks].join("/")} B=${[...bPacks].join("/")}` };
   }
 
+  const aTokens = tokenise(aRow, args.aBrand);
+  const bTokens = tokenise(bRow, args.bBrand);
+  if (hasVersionConflict(aTokens, bTokens)) return { score: 0, reason: `version distinta` };
+  if (hasModelQualifierConflict(aTokens, bTokens)) return { score: 0, reason: `modelo/generacion distinto` };
+  if (hasDirectionalConflict(aTokens, bTokens)) return { score: 0, reason: `terminos direccionales incompatibles` };
+
   const aBaseKey = compact(aRow.baseKey || aRow.syntheticReference || aRow.reference);
   const bBaseKey = compact(bRow.baseKey || bRow.syntheticReference || bRow.reference);
   if (aBaseKey && bBaseKey && aBaseKey === bBaseKey) {
     return { score: 1, reason: `baseKey/referencia igual ${aRow.baseKey || aRow.syntheticReference || aRow.reference}` };
   }
-
-  const aTokens = tokenise(aRow, args.aBrand);
-  const bTokens = tokenise(bRow, args.bBrand);
-  if (hasVersionConflict(aTokens, bTokens)) return { score: 0, reason: `version distinta` };
-  if (hasDirectionalConflict(aTokens, bTokens)) return { score: 0, reason: `terminos direccionales incompatibles` };
 
   const common = aTokens.filter((token) => bTokens.includes(token));
   if (!hasAnchor(common)) return { score: 0, reason: `sin ancla comun suficiente` };

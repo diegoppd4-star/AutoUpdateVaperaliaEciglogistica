@@ -20,10 +20,17 @@ Carpeta operativa para cargar las master JSON en PostgreSQL.
      - uno para Eciglogistica en `only_eciglogistica`;
      - uno para Vaperalia en `only_vaperalia`;
      - dos para `matched_both`.
-   - Carga en PostgreSQL mediante upsert batch:
-     - `distribuidoras`: `on conflict (id) do update`;
-     - `referencias`: `on conflict (id) do update`;
-     - `referencia_distribuidora_links`: `on conflict (id) do update`.
+   - Resuelve primero los links existentes en una sola lectura y conserva su
+     `referencia_id`.
+   - Carga PostgreSQL en lotes configurables con `--batch-size`:
+     - `distribuidoras`: PostgreSQL genera el ID y se resuelven por `nombre`;
+     - referencias nuevas: PostgreSQL genera el ID `IDENTITY` y el loader lo
+       recupera con `RETURNING`;
+     - referencias existentes: conservan su ID y se actualizan por `id`;
+     - links nuevos: PostgreSQL genera el ID `IDENTITY`;
+     - links existentes: se actualizan por
+       `(referencia_id, distribuidora_id, variante)`.
+   - Imprime progreso después de cada lote y realiza un único `COMMIT` al final.
 
 ## Ejecutables
 
